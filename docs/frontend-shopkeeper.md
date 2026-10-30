@@ -61,3 +61,11 @@ All browser data is synthetic local PGlite fixture data. No hosted shop was modi
 - The current catalogue contains **849 authored message keys**. The native Urdu validation test verifies an invalid email is blocked, its message is Urdu, and correcting the value clears the custom message.
 - Screenshots above were captured at 1440×1000 desktop and 390×844 mobile using only synthetic fixtures; inspected login, RTL dashboard, sale dialog and mobile stock/sale captures. No hydration errors were observed in the preference workflow.
 - The revocation regression can log the expected denied-shop `AppError` (403) during its access-removal race; its page/API/SQL assertions pass. It is not a production-cloud result.
+
+## Hosted preview verification (October 30, 2026)
+
+The parent agent also tested the Vercel preview built from published source 19b73d9 using a real, isolated cloud QA account and the existing Supabase staging project. Branch-scoped preview variables were added; production variables and production deployment were not changed. Preview function region is cdg1 and runtime is Node 24.
+
+Real password login succeeded. English-to-Urdu/night changes survived reload and appeared in initial server HTML. The bundled Urdu font loaded. All seven authenticated destinations rendered in Urdu/RTL/night mode with zero Axe WCAG A/AA violations in that automated pass, no horizontal overflow, and no unhandled page errors. Mobile stock was checked at 390 pixels. These preview checks were read-only and did not exercise mutations or email callbacks; the existing deployment's functional QA is documented separately.
+
+An independent native-Urdu and shopkeeper usability review remains a release recommendation; automated checks cannot substitute for it.
