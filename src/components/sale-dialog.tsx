@@ -1,4 +1,6 @@
 "use client";
+import { LocalizedForm, useT } from "./preferences";
+import { message as sourceMessage } from "@/lib/translations";
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -96,6 +98,7 @@ export function SaleDialog({
   onClose: () => void;
   onSuccess: (message: string) => void;
 }) {
+  const t = useT();
   const id = useId();
   const [lines, setLines] = useState<DraftLine[]>(
     initialProduct
@@ -186,7 +189,7 @@ export function SaleDialog({
     if (mutation.pending || new Exact(product.current_stock).lte(0)) return;
     const exists = lines.some((line) => line.product.id === product.id);
     if (!exists && lines.length >= 100) {
-      setValidation("A sale can contain at most 100 different products.");
+      setValidation(sourceMessage("A sale can contain at most 100 different products."));
       return;
     }
     if (!exists)
@@ -233,24 +236,28 @@ export function SaleDialog({
     event.preventDefault();
     setValidation(null);
     if (!lines.length) {
-      setValidation("Add at least one product to this sale.");
+      setValidation(sourceMessage("Add at least one product to this sale."));
       searchRef.current?.focus();
       return;
     }
     if (total === null) {
       setValidation(
-        "Check quantities, prices, and discounts. A line discount cannot exceed its value.",
+        sourceMessage(
+          "Check quantities, prices, and discounts. A line discount cannot exceed its value.",
+        ),
       );
       return;
     }
     if (lines.some((line) => new Exact(line.quantity).gt(line.product.current_stock))) {
       setValidation(
-        "A quantity is higher than the available stock. Reduce the quantity and try again.",
+        sourceMessage(
+          "A quantity is higher than the available stock. Reduce the quantity and try again.",
+        ),
       );
       return;
     }
     if (method === "credit" && !customer.trim()) {
-      setValidation("Add the customer’s name to record a credit sale.");
+      setValidation(sourceMessage("Add the customer’s name to record a credit sale."));
       return;
     }
     const items: SaleLineInput[] = lines.map((line) => ({
@@ -282,15 +289,15 @@ export function SaleDialog({
       }
       onSuccess(
         typeof result.reference === "string"
-          ? `Sale ${result.reference} recorded successfully.`
-          : "Sale recorded successfully.",
+          ? sourceMessage("Sale {v0} recorded successfully.", { v0: result.reference })
+          : sourceMessage("Sale recorded successfully."),
       );
     }
   }
   return (
     <Modal
-      title="New sale"
-      description="Build the sale, choose payment, and record it once."
+      title={t("New sale")}
+      description={t("Build the sale, choose payment, and record it once.")}
       wide
       onClose={onClose}
       busy={mutation.pending}
@@ -299,13 +306,13 @@ export function SaleDialog({
         <>
           <div className="sale-footer-total">
             <span>
-              Total <span className="muted">· {shop.currency}</span>
+              {t("Total")} <span className="muted">· {shop.currency}</span>
             </span>
-            <strong>{total === null ? "Check amounts" : money(total, shop.currency)}</strong>
+            <strong>{total === null ? t("Check amounts") : money(total, shop.currency)}</strong>
           </div>
           <div className="button-row">
             <Button variant="secondary" type="button" onClick={onClose} disabled={mutation.pending}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               type="submit"
@@ -315,24 +322,25 @@ export function SaleDialog({
             >
               {!mutation.pending && <Check size={17} />}
               {mutation.pending
-                ? "Recording…"
+                ? t("Recording…")
                 : method === "credit"
-                  ? "Record credit sale"
-                  : "Record sale"}
+                  ? t("Record credit sale")
+                  : t("Record sale")}
             </Button>
           </div>
         </>
       }
     >
-      <form id={`${id}-sale`} onSubmit={postSale} className="sale-form">
+      <LocalizedForm id={`${id}-sale`} onSubmit={postSale} className="sale-form">
         {restored && (
           <Notice tone="warning">
-            <strong>A previously submitted sale was restored.</strong>
+            <strong>{t("A previously submitted sale was restored.")}</strong>
             <p>
-              It may already have been saved. Retry this unchanged form to recover the original
-              result safely. Before changing it or starting a different sale,{" "}
+              {t(
+                "It may already have been saved. Retry this unchanged form to recover the original result safely. Before changing it or starting a different sale,",
+              )}{" "}
               <Link href="/sales" className="text-link" onClick={onClose}>
-                review Sales
+                {t("review Sales")}
               </Link>
               .
             </p>
@@ -342,7 +350,7 @@ export function SaleDialog({
         <fieldset disabled={mutation.pending} className="plain-fieldset">
           <div className="sale-product-search">
             <label htmlFor={`${id}-search`} className="field-label">
-              Add products
+              {t("Step 1 · Choose products")}
             </label>
             <div className="search-input">
               <Search size={18} aria-hidden="true" />
@@ -351,7 +359,7 @@ export function SaleDialog({
                 ref={searchRef}
                 data-autofocus={!initialProduct ? true : undefined}
                 type="search"
-                placeholder="Search by product name, SKU, or barcode"
+                placeholder={t("Search by product name, SKU, or barcode")}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 autoComplete="off"
@@ -362,7 +370,7 @@ export function SaleDialog({
               {loading ? (
                 <div className="search-loading" role="status">
                   <Loader2 size={16} className="spin" />
-                  Finding products…
+                  {t("Finding products…")}
                 </div>
               ) : searchError ? (
                 <div className="search-error">
@@ -373,17 +381,17 @@ export function SaleDialog({
                     type="button"
                     onClick={() => setSearchRevision((value) => value + 1)}
                   >
-                    Retry
+                    {t("Retry")}
                   </Button>
                 </div>
               ) : !results.length ? (
                 <p className="search-empty">
                   {search
-                    ? "No matching active products. Try a name, SKU, or barcode."
-                    : "No active products yet. Add products from Inventory first."}
+                    ? t("No matching active products. Try a name, SKU, or barcode.")
+                    : t("No active products yet. Add products from Inventory first.")}
                 </p>
               ) : (
-                <ul aria-label="Matching products">
+                <ul aria-label={t("Matching products")}>
                   {results.map((product) => {
                     const added = lines.some((line) => line.product.id === product.id);
                     const unavailable = stockStatus(product) === "out";
@@ -393,7 +401,9 @@ export function SaleDialog({
                           type="button"
                           onClick={() => addProduct(product)}
                           disabled={unavailable}
-                          aria-label={`${added ? "Focus quantity for" : "Add"} ${product.name}`}
+                          aria-label={t(added ? "Focus quantity for {v0}" : "Add {v0}", {
+                            v0: product.name,
+                          })}
                         >
                           <span className="search-product-icon">
                             <ShoppingBag size={16} />
@@ -406,14 +416,14 @@ export function SaleDialog({
                                 product.category?.name ||
                                 product.unit}{" "}
                               <span aria-hidden="true">·</span> {quantity(product.current_stock)}{" "}
-                              {product.unit} available
+                              {product.unit} {t("available")}
                             </small>
                           </span>
                           <strong className="search-result-price">
                             {money(product.selling_price, shop.currency)}
                           </strong>
                           {unavailable ? (
-                            <Badge tone="red">Out</Badge>
+                            <Badge tone="red">{t("Out")}</Badge>
                           ) : added ? (
                             <Check size={17} className="green-text" />
                           ) : (
@@ -429,24 +439,24 @@ export function SaleDialog({
           </div>
           <div className="sale-lines-heading">
             <h3>
-              Sale items <span className="count-chip">{lines.length}</span>
+              {t("Sale items")} <span className="count-chip">{lines.length}</span>
             </h3>
-            <span className="muted small-text">Discounts are flat amounts per line</span>
+            <span className="muted small-text">{t("Discounts are flat amounts per line")}</span>
           </div>
           {!lines.length ? (
             <div className="sale-items-empty">
               <ShoppingBag size={22} aria-hidden="true" />
-              <p>Your sale is empty</p>
-              <span>Choose a product above to get started.</span>
+              <p>{t("Your sale is empty")}</p>
+              <span>{t("Choose a product above to get started.")}</span>
             </div>
           ) : (
             <div className="sale-lines">
               <div className="sale-line-labels" aria-hidden="true">
-                <span>Product</span>
-                <span>Quantity</span>
-                <span>Unit price</span>
-                <span>Discount</span>
-                <span>Line total</span>
+                <span>{t("Product")}</span>
+                <span>{t("Quantity")}</span>
+                <span>{t("Unit price")}</span>
+                <span>{t("Discount")}</span>
+                <span>{t("Line total")}</span>
                 <span />
               </div>
               {lines.map((line, index) => {
@@ -465,13 +475,13 @@ export function SaleDialog({
                     <div className="sale-line-product">
                       <strong>{line.product.name}</strong>
                       <span>
-                        {quantity(line.product.current_stock)} {line.product.unit} in stock
+                        {quantity(line.product.current_stock)} {line.product.unit} {t("in stock")}
                       </span>
                     </div>
                     <label>
-                      <span className="mobile-field-label">Quantity</span>
+                      <span className="mobile-field-label">{t("Quantity")}</span>
                       <input
-                        aria-label={`Quantity for ${line.product.name}`}
+                        aria-label={t("Quantity for {v0}", { v0: line.product.name })}
                         ref={(element) => {
                           quantityRefs.current[line.product.id] = element;
                         }}
@@ -489,9 +499,12 @@ export function SaleDialog({
                       />
                     </label>
                     <label>
-                      <span className="mobile-field-label">Unit price</span>
+                      <span className="mobile-field-label">{t("Unit price")}</span>
                       <input
-                        aria-label={`Unit price for ${line.product.name}, ${shop.currency}`}
+                        aria-label={t("Unit price for {v0}, {v1}", {
+                          v0: line.product.name,
+                          v1: shop.currency,
+                        })}
                         type="number"
                         inputMode="decimal"
                         min="0"
@@ -505,9 +518,12 @@ export function SaleDialog({
                       />
                     </label>
                     <label>
-                      <span className="mobile-field-label">Discount</span>
+                      <span className="mobile-field-label">{t("Discount")}</span>
                       <input
-                        aria-label={`Line discount for ${line.product.name}, ${shop.currency}`}
+                        aria-label={t("Line discount for {v0}, {v1}", {
+                          v0: line.product.name,
+                          v1: shop.currency,
+                        })}
                         type="number"
                         inputMode="decimal"
                         min="0"
@@ -520,15 +536,15 @@ export function SaleDialog({
                         required
                       />
                     </label>
-                    <strong className="sale-line-total">
+                    <strong className="sale-line-total" data-label={t("Line total")}>
                       {totals[index] === null ? (
-                        <span className="danger-text">Invalid amount</span>
+                        <span className="danger-text">{t("Invalid amount")}</span>
                       ) : (
                         money(totals[index]!, shop.currency)
                       )}
                     </strong>
                     <IconButton
-                      label={`Remove ${line.product.name}`}
+                      label={t("Remove {v0}", { v0: line.product.name })}
                       onClick={() => {
                         setLines((current) =>
                           current.filter((item) => item.product.id !== line.product.id),
@@ -540,7 +556,10 @@ export function SaleDialog({
                     </IconButton>
                     {overStock && (
                       <span className="sale-line-error field-error">
-                        Only {quantity(line.product.current_stock)} {line.product.unit} available.
+                        {t("Only {v0} {v1} available.", {
+                          v0: quantity(line.product.current_stock),
+                          v1: line.product.unit,
+                        })}
                       </span>
                     )}
                   </div>
@@ -550,12 +569,12 @@ export function SaleDialog({
           )}
           {lines.length > 0 && (
             <div className="sale-discount-summary">
-              <span>Line discounts included</span>
+              <span>{t("Line discounts included")}</span>
               <span>{money(discountTotal, shop.currency)}</span>
             </div>
           )}
           <div className="form-section">
-            <h3>Payment</h3>
+            <h3>{t("Step 2 · Payment and customer")}</h3>
             <div className="payment-options">
               {(
                 [
@@ -576,26 +595,33 @@ export function SaleDialog({
                     onChange={() => setMethod(value)}
                   />
                   <Icon size={18} aria-hidden="true" />
-                  <span>{label}</span>
+                  <span>{t(label)}</span>
                   {method === value && <Check size={15} className="payment-check" />}
                 </label>
               ))}
             </div>
             {method === "credit" && (
               <p className="form-hint">
-                Creates an outstanding balance, not a cash receipt. Collect payment from Sales when
-                it is received.
+                <strong>{t("Credit means udhaar: payment will be collected later.")}</strong>{" "}
+                {t(
+                  "Creates an outstanding balance, not a cash receipt. Collect payment from Sales when it is received.",
+                )}
               </p>
             )}
           </div>
+          <p className="form-hint">
+            {t(
+              "Digital means a payment already received, e.g. bank or mobile wallet. No money is transferred by this app.",
+            )}
+          </p>
           <div className="form-grid">
             <label className="field">
               <span>
-                Customer name{" "}
+                {t("Customer name")}{" "}
                 {method === "credit" ? (
                   <span className="required-text">*</span>
                 ) : (
-                  <span className="optional">(optional)</span>
+                  <span className="optional">{t("(optional)")}</span>
                 )}
               </span>
               <div className="input-icon">
@@ -605,7 +631,7 @@ export function SaleDialog({
                   value={customer}
                   onChange={(event) => setCustomer(event.target.value)}
                   placeholder={
-                    method === "credit" ? "Required for credit sales" : "Walk-in customer"
+                    method === "credit" ? t("Required for credit sales") : t("Walk-in customer")
                   }
                   required={method === "credit"}
                   maxLength={160}
@@ -615,36 +641,37 @@ export function SaleDialog({
             </label>
             <label className="field">
               <span>
-                Contact <span className="optional">(optional)</span>
+                {t("Contact")} <span className="optional">{t("(optional)")}</span>
               </span>
               <input
                 type="text"
                 value={contact}
                 onChange={(event) => setContact(event.target.value)}
-                placeholder="Phone number or email"
+                placeholder={t("Phone number or email")}
                 maxLength={160}
                 autoComplete="off"
               />
             </label>
             <label className="field field--full">
               <span>
-                Sale note <span className="optional">(optional)</span>
+                {t("Sale note")} <span className="optional">{t("(optional)")}</span>
               </span>
               <textarea
                 rows={2}
                 maxLength={500}
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
-                placeholder="Anything worth keeping with this sale"
+                placeholder={t("Anything worth keeping with this sale")}
               />
             </label>
           </div>
           <p className="form-hint sale-commit-note">
-            Stock and totals are checked again when you record the sale. The sale is saved only
-            after the server confirms it.
+            {t(
+              "Stock and totals are checked again when you record the sale. The sale is saved only after the server confirms it.",
+            )}
           </p>
         </fieldset>
-      </form>
+      </LocalizedForm>
     </Modal>
   );
 }

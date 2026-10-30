@@ -1,11 +1,13 @@
 "use client";
+import { LocalizedForm, useDateFormatter, useMessage, useT } from "./preferences";
+import { message as sourceMessage } from "@/lib/translations";
 
 import { useId, useState, type FormEvent } from "react";
 import type Decimal from "decimal.js";
 import { ArrowRight, Download, FileSpreadsheet, History, PackageMinus, Upload } from "lucide-react";
 import type { Category, InventoryMovement, Product, ProductInput, Shop } from "../lib/types";
 import { Exact, money, quantity } from "../lib/money";
-import { formatDate } from "../lib/dates";
+
 import { optional, useMutation, useRemote } from "./hooks";
 import { unitCost } from "./format";
 import {
@@ -43,6 +45,7 @@ export function ProductEditor({
   onClose,
   onSuccess,
 }: { product?: Product; categories: Category[]; shop: Shop } & Done) {
+  const t = useT();
   const id = useId();
   const mutation = useMutation();
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -65,41 +68,46 @@ export function ProductEditor({
       product_id: product?.id ?? null,
       product: input,
     });
-    if (result) onSuccess(product ? `${input.name} updated.` : `${input.name} added to inventory.`);
+    if (result)
+      onSuccess(
+        product
+          ? sourceMessage("{v0} updated.", { v0: input.name })
+          : sourceMessage("{v0} added to inventory.", { v0: input.name }),
+      );
   }
   const fieldErrors = (name: string) =>
     mutation.fields[name]?.join(" ") || mutation.fields[`product.${name}`]?.join(" ");
   return (
     <Modal
-      title={product ? "Edit product" : "Add a product"}
+      title={product ? t("Edit product") : t("Add a product")}
       description={
         product
-          ? "Catalog changes apply to future sales. Historical sales stay unchanged."
-          : "Create a product and set its opening stock."
+          ? t("Catalog changes apply to future sales. Historical sales stay unchanged.")
+          : t("Create a product and set its opening stock.")
       }
       onClose={onClose}
       busy={mutation.pending}
       footer={
         <FormActions
           form={`${id}-form`}
-          label={product ? "Save changes" : "Add product"}
+          label={product ? t("Save changes") : t("Add product")}
           pending={mutation.pending}
           onCancel={onClose}
         />
       }
     >
-      <form id={`${id}-form`} onSubmit={save}>
+      <LocalizedForm id={`${id}-form`} onSubmit={save}>
         {mutation.error && <Notice>{mutation.error}</Notice>}
         <fieldset disabled={mutation.pending} className="plain-fieldset form-grid">
           <label className="field field--full">
             <span>
-              Product name <span className="required-text">*</span>
+              {t("Product name")} <span className="required-text">*</span>
             </span>
             <input
               data-autofocus
               name="name"
               defaultValue={product?.name}
-              placeholder="e.g. Product name"
+              placeholder={t("e.g. Product name")}
               required
               maxLength={160}
               aria-invalid={!!fieldErrors("name")}
@@ -109,33 +117,35 @@ export function ProductEditor({
           </label>
           <label className="field">
             <span>
-              SKU <span className="optional">(optional)</span>
+              {t("SKU")} <span className="optional">{t("(optional)")}</span>
             </span>
             <input
               name="sku"
+              dir="ltr"
               defaultValue={product?.sku ?? ""}
               maxLength={80}
-              placeholder="Your product code"
+              placeholder={t("Your product code")}
             />
             <FieldError>{fieldErrors("sku")}</FieldError>
           </label>
           <label className="field">
             <span>
-              Barcode <span className="optional">(optional)</span>
+              {t("Barcode")} <span className="optional">{t("(optional)")}</span>
             </span>
             <input
               name="barcode"
+              dir="ltr"
               defaultValue={product?.barcode ?? ""}
               maxLength={80}
               inputMode="numeric"
-              placeholder="Scan or type a barcode"
+              placeholder={t("Scan or type a barcode")}
             />
             <FieldError>{fieldErrors("barcode")}</FieldError>
           </label>
           <label className="field">
-            <span>Category</span>
+            <span>{t("Category")}</span>
             <select name="category_id" defaultValue={product?.category_id ?? ""}>
-              <option value="">Uncategorized</option>
+              <option value="">{t("Uncategorized")}</option>
               {categories.map((category) => (
                 <option value={category.id} key={category.id}>
                   {category.name}
@@ -145,22 +155,24 @@ export function ProductEditor({
           </label>
           <label className="field">
             <span>
-              Unit <span className="required-text">*</span>
+              {t("Unit")} <span className="required-text">*</span>
             </span>
             <input
               name="unit"
               defaultValue={product?.unit ?? "unit"}
               required
               maxLength={24}
-              placeholder="e.g. piece, kg, litre"
+              placeholder={t("e.g. piece, kg, litre")}
             />
           </label>
           <div className="form-divider field--full">
-            <span>Pricing · {shop.currency}</span>
+            <span>
+              {t("Pricing ·")} {shop.currency}
+            </span>
           </div>
           <label className="field">
             <span>
-              Selling price <span className="required-text">*</span>
+              {t("Selling price")} <span className="required-text">*</span>
             </span>
             <input
               name="selling_price"
@@ -177,7 +189,7 @@ export function ProductEditor({
           </label>
           <label className="field">
             <span>
-              Unit cost <span className="optional">(optional)</span>
+              {t("Unit cost")} <span className="optional">{t("(optional)")}</span>
             </span>
             <input
               name="cost_price"
@@ -187,25 +199,25 @@ export function ProductEditor({
               step="0.0001"
               inputMode="decimal"
               defaultValue={product?.cost_price ?? ""}
-              placeholder="Leave blank if unknown"
+              placeholder={t("Leave blank if unknown")}
             />
-            <span className="form-hint">Unknown cost is never treated as zero profit.</span>
+            <span className="form-hint">{t("Unknown cost is never treated as zero profit.")}</span>
             <FieldError>{fieldErrors("cost_price")}</FieldError>
           </label>
           <div className="form-divider field--full">
-            <span>Stock</span>
+            <span>{t("Stock")}</span>
           </div>
           {product ? (
             <div className="field">
-              <span className="field-label">Current stock</span>
+              <span className="field-label">{t("Current stock")}</span>
               <div className="read-only-value">
                 {quantity(product.current_stock)} <span className="muted">{product.unit}</span>
               </div>
-              <span className="form-hint">Use Receive or Adjust to change stock.</span>
+              <span className="form-hint">{t("Use Receive or Adjust to change stock.")}</span>
             </div>
           ) : (
             <label className="field">
-              <span>Opening stock</span>
+              <span>{t("Opening stock")}</span>
               <input
                 name="opening_stock"
                 type="number"
@@ -220,7 +232,7 @@ export function ProductEditor({
             </label>
           )}
           <label className="field">
-            <span>Low-stock alert at</span>
+            <span>{t("Low-stock alert at")}</span>
             <input
               name="low_stock_threshold"
               type="number"
@@ -231,79 +243,83 @@ export function ProductEditor({
               defaultValue={product?.low_stock_threshold ?? "5"}
               required
             />
-            <span className="form-hint">Alerts when available stock reaches this level.</span>
+            <span className="form-hint">
+              {t("Alerts when available stock reaches this level.")}
+            </span>
           </label>
           <label className="checkbox-row field--full">
             <input type="checkbox" name="is_active" defaultChecked={product?.is_active ?? true} />
             <span>
-              <strong>Active product</strong>
-              <small>Available for new sales. Inactive products keep all history.</small>
+              <strong>{t("Active product")}</strong>
+              <small>{t("Available for new sales. Inactive products keep all history.")}</small>
             </span>
           </label>
         </fieldset>
-      </form>
+      </LocalizedForm>
     </Modal>
   );
 }
 
 export function CategoryDialog({ onClose, onSuccess }: Done) {
+  const t = useT();
   const id = useId();
   const mutation = useMutation();
   return (
     <Modal
-      title="New category"
-      description="Organize your catalog for faster searching and useful reports."
+      title={t("New category")}
+      description={t("Organize your catalog for faster searching and useful reports.")}
       onClose={onClose}
       busy={mutation.pending}
       footer={
         <FormActions
           form={`${id}-category`}
-          label="Create category"
+          label={t("Create category")}
           pending={mutation.pending}
           onCancel={onClose}
         />
       }
     >
-      <form
+      <LocalizedForm
         id={`${id}-category`}
         onSubmit={async (event) => {
           event.preventDefault();
           const name = String(new FormData(event.currentTarget).get("name") ?? "").trim();
           const result = await mutation.submit("category", { name });
-          if (result) onSuccess(`Category “${name}” created.`);
+          if (result) onSuccess(sourceMessage("Category “{v0}” created.", { v0: name }));
         }}
       >
         {mutation.error && <Notice>{mutation.error}</Notice>}
         <label className="field">
           <span>
-            Category name <span className="required-text">*</span>
+            {t("Category name")} <span className="required-text">*</span>
           </span>
           <input
             data-autofocus
             name="name"
-            placeholder="Name your category"
+            placeholder={t("Name your category")}
             maxLength={80}
             required
             disabled={mutation.pending}
           />
         </label>
-      </form>
+      </LocalizedForm>
     </Modal>
   );
 }
 
 export function DeactivateDialog({ product, onClose, onSuccess }: { product: Product } & Done) {
+  const t = useT();
   const mutation = useMutation();
   return (
     <Modal
-      title="Deactivate product?"
-      description="This product will no longer be available for new sales."
+      title={t("Deactivate product?")}
+      description={t("This product will no longer be available for new sales.")}
       onClose={onClose}
       busy={mutation.pending}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={mutation.pending}>
-            Keep active
+            {t("Keep active")}
           </Button>
           <Button
             variant="danger"
@@ -313,10 +329,15 @@ export function DeactivateDialog({ product, onClose, onSuccess }: { product: Pro
                 product_id: product.id,
                 product: productInput(product, false),
               });
-              if (result) onSuccess(`${product.name} deactivated. Its history is preserved.`);
+              if (result)
+                onSuccess(
+                  sourceMessage("{v0} deactivated. Its history is preserved.", {
+                    v0: product.name,
+                  }),
+                );
             }}
           >
-            Deactivate product
+            {t("Deactivate product")}
           </Button>
         </>
       }
@@ -327,13 +348,15 @@ export function DeactivateDialog({ product, onClose, onSuccess }: { product: Pro
         <div>
           <strong>{product.name}</strong>
           <span>
-            {product.sku || "No SKU"} · {quantity(product.current_stock)} {product.unit} in stock
+            {product.sku || t("No SKU")} · {quantity(product.current_stock)} {product.unit}{" "}
+            {t("in stock")}
           </span>
         </div>
       </div>
       <p className="body-copy">
-        Sales, stock movements, and reports stay intact. You can reactivate the product from the
-        inactive inventory filter.
+        {t(
+          "Sales, stock movements, and reports stay intact. You can reactivate the product from the inactive inventory filter.",
+        )}
       </p>
     </Modal>
   );
@@ -345,6 +368,7 @@ export function ReceiveDialog({
   onClose,
   onSuccess,
 }: { product: Product; shop: Shop } & Done) {
+  const t = useT();
   const id = useId();
   const mutation = useMutation();
   const [received, setReceived] = useState("");
@@ -358,26 +382,26 @@ export function ReceiveDialog({
   }
   return (
     <Modal
-      title="Receive stock"
-      description={`Add a delivery to ${product.name}.`}
+      title={t("Receive stock")}
+      description={t("Add a delivery to {v0}.", { v0: product.name })}
       onClose={onClose}
       busy={mutation.pending}
       footer={
         <FormActions
           form={`${id}-receive`}
-          label="Receive stock"
+          label={t("Receive stock")}
           pending={mutation.pending}
           onCancel={onClose}
         />
       }
     >
       <div className="stock-context">
-        <span>Current stock</span>
+        <span>{t("Current stock")}</span>
         <strong>
           {quantity(product.current_stock)} {product.unit}
         </strong>
       </div>
-      <form
+      <LocalizedForm
         id={`${id}-receive`}
         onSubmit={async (event) => {
           event.preventDefault();
@@ -391,14 +415,20 @@ export function ReceiveDialog({
             note: optional(form.get("note")),
           });
           if (result)
-            onSuccess(`${quantity(received)} ${product.unit} received for ${product.name}.`);
+            onSuccess(
+              sourceMessage("{v0} {v1} received for {v2}.", {
+                v0: quantity(received),
+                v1: product.unit,
+                v2: product.name,
+              }),
+            );
         }}
       >
         {mutation.error && <Notice>{mutation.error}</Notice>}
         <fieldset className="plain-fieldset form-grid" disabled={mutation.pending}>
           <label className="field">
             <span>
-              Quantity received <span className="required-text">*</span>
+              {t("Quantity received")} <span className="required-text">*</span>
             </span>
             <input
               data-autofocus
@@ -415,7 +445,7 @@ export function ReceiveDialog({
           </label>
           <label className="field">
             <span>
-              Unit cost · {shop.currency} <span className="required-text">*</span>
+              {t("Unit cost ·")} {shop.currency} <span className="required-text">*</span>
             </span>
             <input
               type="number"
@@ -431,50 +461,53 @@ export function ReceiveDialog({
           </label>
           <label className="field field--full">
             <span>
-              Supplier <span className="optional">(optional)</span>
+              {t("Supplier")} <span className="optional">{t("(optional)")}</span>
             </span>
-            <input name="supplier" maxLength={160} placeholder="Supplier name" />
+            <input name="supplier" maxLength={160} placeholder={t("Supplier name")} />
           </label>
           <label className="field field--full">
-            <span>Delivery payment</span>
+            <span>{t("Delivery payment")}</span>
             <select name="payment_method" defaultValue="cash">
-              <option value="cash">Paid in cash</option>
-              <option value="digital">Paid digitally</option>
-              <option value="unpaid">Unpaid / pay supplier later</option>
+              <option value="cash">{t("Paid in cash")}</option>
+              <option value="digital">{t("Paid digitally")}</option>
+              <option value="unpaid">{t("Unpaid / pay supplier later")}</option>
             </select>
             <span className="form-hint">
-              Paid deliveries post a supplier payment to the cashbook. Unpaid deliveries do not
-              create cash movement.
+              {t(
+                "Paid deliveries post a supplier payment to the cashbook. Unpaid deliveries do not create cash movement.",
+              )}
             </span>
           </label>
           <label className="field field--full">
             <span>
-              Delivery note <span className="optional">(optional)</span>
+              {t("Delivery note")} <span className="optional">{t("(optional)")}</span>
             </span>
             <textarea
               name="note"
               rows={2}
               maxLength={500}
-              placeholder="Invoice reference or delivery details"
+              placeholder={t("Invoice reference or delivery details")}
             />
           </label>
           {purchaseTotal !== null && (
             <div className="calculation-summary field--full">
-              <span>Delivery cost</span>
+              <span>{t("Delivery cost")}</span>
               <strong>{money(purchaseTotal, shop.currency)}</strong>
             </div>
           )}
           <p className="form-hint field--full">
-            Receipt cost updates weighted-average product cost when the previous cost is known. It
-            does not rewrite historical sales.
+            {t(
+              "Receipt cost updates weighted-average product cost when the previous cost is known. It does not rewrite historical sales.",
+            )}
           </p>
         </fieldset>
-      </form>
+      </LocalizedForm>
     </Modal>
   );
 }
 
 export function AdjustDialog({ product, onClose, onSuccess }: { product: Product } & Done) {
+  const t = useT();
   const id = useId();
   const mutation = useMutation();
   const [kind, setKind] = useState("correction");
@@ -491,29 +524,33 @@ export function AdjustDialog({ product, onClose, onSuccess }: { product: Product
   }
   return (
     <Modal
-      title="Adjust stock"
-      description={`Record a counted correction, damage, or missing stock for ${product.name}.`}
+      title={t("Adjust stock")}
+      description={t("Record a counted correction, damage, or missing stock for {v0}.", {
+        v0: product.name,
+      })}
       onClose={onClose}
       busy={mutation.pending}
       footer={
         <FormActions
           form={`${id}-adjust`}
-          label="Record adjustment"
+          label={t("Record adjustment")}
           pending={mutation.pending}
           onCancel={onClose}
         />
       }
     >
       <Notice tone="info">
-        For deliveries use Receive stock. For customer transactions use a sale or return.
+        {t("For deliveries use Receive stock. For customer transactions use a sale or return.")}
       </Notice>
-      <form
+      <LocalizedForm
         id={`${id}-adjust`}
         onSubmit={async (event) => {
           event.preventDefault();
           setValidation(null);
           if (!next || next.isNegative()) {
-            setValidation("This adjustment would make stock negative. Check the quantity.");
+            setValidation(
+              sourceMessage("This adjustment would make stock negative. Check the quantity."),
+            );
             return;
           }
           const form = new FormData(event.currentTarget);
@@ -524,31 +561,32 @@ export function AdjustDialog({ product, onClose, onSuccess }: { product: Product
             kind,
             note: String(form.get("note") ?? "").trim(),
           });
-          if (result) onSuccess(`Stock adjustment recorded for ${product.name}.`);
+          if (result)
+            onSuccess(sourceMessage("Stock adjustment recorded for {v0}.", { v0: product.name }));
         }}
       >
         {(validation || mutation.error) && <Notice>{validation || mutation.error}</Notice>}
         <fieldset disabled={mutation.pending} className="plain-fieldset form-grid">
           <label className="field field--full">
-            <span>Adjustment type</span>
+            <span>{t("Adjustment type")}</span>
             <select data-autofocus value={kind} onChange={(event) => setKind(event.target.value)}>
-              <option value="correction">Stock correction — counted difference</option>
-              <option value="damage">Damaged stock — remove</option>
-              <option value="missing">Missing stock — remove</option>
+              <option value="correction">{t("Stock correction — counted difference")}</option>
+              <option value="damage">{t("Damaged stock — remove")}</option>
+              <option value="missing">{t("Missing stock — remove")}</option>
             </select>
           </label>
           {kind === "correction" && (
             <label className="field">
-              <span>Correction direction</span>
+              <span>{t("Correction direction")}</span>
               <select value={direction} onChange={(event) => setDirection(event.target.value)}>
-                <option value="remove">Remove from stock</option>
-                <option value="add">Add to stock</option>
+                <option value="remove">{t("Remove from stock")}</option>
+                <option value="add">{t("Add to stock")}</option>
               </select>
             </label>
           )}
           <label className={`field${kind !== "correction" ? " field--full" : ""}`}>
             <span>
-              {negative ? "Quantity to remove" : "Quantity to add"}{" "}
+              {negative ? t("Quantity to remove") : t("Quantity to add")}{" "}
               <span className="required-text">*</span>
             </span>
             <input
@@ -567,7 +605,7 @@ export function AdjustDialog({ product, onClose, onSuccess }: { product: Product
           </label>
           <label className="field field--full">
             <span>
-              Reason <span className="required-text">*</span>
+              {t("Reason")} <span className="required-text">*</span>
             </span>
             <textarea
               name="note"
@@ -577,33 +615,37 @@ export function AdjustDialog({ product, onClose, onSuccess }: { product: Product
               maxLength={500}
               placeholder={
                 kind === "damage"
-                  ? "What was damaged and why?"
+                  ? t("What was damaged and why?")
                   : kind === "missing"
-                    ? "Describe the missing stock"
-                    : "Explain the counted difference"
+                    ? t("Describe the missing stock")
+                    : t("Explain the counted difference")
               }
             />
           </label>
           <div className={`stock-preview field--full${next?.isNegative() ? " is-invalid" : ""}`}>
             <div>
-              <span>Current</span>
+              <span>{t("Current")}</span>
               <strong>
                 {quantity(product.current_stock)} {product.unit}
               </strong>
             </div>
             <ArrowRight size={18} aria-hidden="true" />
             <div>
-              <span>After adjustment</span>
+              <span>{t("After adjustment")}</span>
               <strong>
-                {next === null ? "—" : `${quantity(next.toString())} ${product.unit}`}
+                {next === null
+                  ? "—"
+                  : t("{v0} {v1}", { v0: quantity(next.toString()), v1: product.unit })}
               </strong>
             </div>
           </div>
           <p className="form-hint field--full">
-            This creates a permanent, timestamped movement. It does not record revenue or a payment.
+            {t(
+              "This creates a permanent, timestamped movement. It does not record revenue or a payment.",
+            )}
           </p>
         </fieldset>
-      </form>
+      </LocalizedForm>
     </Modal>
   );
 }
@@ -617,51 +659,57 @@ export function MovementsDialog({
   shop: Shop;
   onClose: () => void;
 }) {
+  const formatDate = useDateFormatter();
+  const t = useT();
+  const m = useMessage();
   const remote = useRemote<{ movements: InventoryMovement[] }>(
     `/api/products/${product.id}/movements`,
   );
   return (
     <Modal
       wide
-      title="Stock movements"
-      description={`${product.name} · All movements are retained for audit.`}
+      title={t("Stock movements")}
+      description={t("{v0} · All movements are retained for audit.", { v0: product.name })}
       onClose={onClose}
       footer={
         <>
-          <span className="muted small-text">Showing the latest 200 movements at most.</span>
+          <span className="muted small-text">{t("Showing the latest 200 movements at most.")}</span>
           <Button variant="secondary" onClick={onClose}>
-            Close
+            {t("Close")}
           </Button>
         </>
       }
     >
       {remote.loading ? (
-        <LoadingView compact label="Loading stock history…" />
+        <LoadingView compact label={t("Loading stock history…")} />
       ) : remote.error ? (
         <Notice>
           {remote.error}
           <Button size="sm" variant="ghost" onClick={remote.reload}>
-            Try again
+            {t("Try again")}
           </Button>
         </Notice>
       ) : !remote.data?.movements.length ? (
         <EmptyState
           compact
           icon={History}
-          title="No movements yet"
-          description="Receiving, sales, and adjustments will be recorded here."
+          title={t("No movements yet")}
+          description={t("Receiving, sales, and adjustments will be recorded here.")}
         />
       ) : (
         <div className="table-scroll">
           <table className="data-table movement-table">
-            <caption className="sr-only">Stock movements for {product.name}, newest first</caption>
+            <caption className="sr-only">
+              {t("Stock movements for")} {product.name}
+              {t(", newest first")}
+            </caption>
             <thead>
               <tr>
-                <th>Date & time</th>
-                <th>Movement</th>
-                <th className="numeric">Change</th>
-                <th className="numeric">Stock after</th>
-                <th>Note / reference</th>
+                <th>{t("Date & time")}</th>
+                <th>{t("Movement")}</th>
+                <th className="numeric">{t("Change")}</th>
+                <th className="numeric">{t("Stock after")}</th>
+                <th>{t("Note / reference")}</th>
               </tr>
             </thead>
             <tbody>
@@ -680,11 +728,11 @@ export function MovementsDialog({
                     <Badge
                       tone={new Exact(movement.quantity_delta).isNegative() ? "neutral" : "green"}
                     >
-                      {movement.kind.replaceAll("_", " ")}
+                      {m(movement.kind)}
                     </Badge>
                     {movement.unit_cost !== null && (
                       <span className="cell-meta">
-                        Cost {unitCost(movement.unit_cost, shop.currency)}
+                        {t("Cost")} {unitCost(movement.unit_cost, shop.currency, t("Unavailable"))}
                       </span>
                     )}
                   </td>
@@ -699,7 +747,7 @@ export function MovementsDialog({
                     <span>{movement.note || "—"}</span>
                     {movement.reference_id && (
                       <span className="cell-meta mono" title={movement.reference_id}>
-                        Ref {movement.reference_id.slice(0, 8)}
+                        {t("Ref")} {movement.reference_id.slice(0, 8)}
                       </span>
                     )}
                   </td>
@@ -714,6 +762,7 @@ export function MovementsDialog({
 }
 
 export function ImportDialog({ onClose, onSuccess }: Done) {
+  const t = useT();
   const id = useId();
   const mutation = useMutation();
   const [csv, setCsv] = useState("");
@@ -722,14 +771,14 @@ export function ImportDialog({ onClose, onSuccess }: Done) {
   const [reading, setReading] = useState(false);
   return (
     <Modal
-      title="Import products"
-      description="Add up to 500 products in one validated, atomic import."
+      title={t("Import products")}
+      description={t("Add up to 500 products in one validated, atomic import.")}
       onClose={onClose}
       busy={mutation.pending || reading}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={mutation.pending || reading}>
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button
             type="submit"
@@ -737,7 +786,8 @@ export function ImportDialog({ onClose, onSuccess }: Done) {
             pending={mutation.pending}
             disabled={!csv.trim() || reading}
           >
-            {!mutation.pending && <Upload size={16} />}Import products
+            {!mutation.pending && <Upload size={16} />}
+            {t("Import products")}
           </Button>
         </>
       }
@@ -745,39 +795,43 @@ export function ImportDialog({ onClose, onSuccess }: Done) {
       <div className="import-steps">
         <span className="step-number">1</span>
         <div>
-          <strong>Start with the template</strong>
-          <p>Use its exact column names. Category names are created as needed.</p>
+          <strong>{t("Start with the template")}</strong>
+          <p>{t("Use its exact column names. Category names are created as needed.")}</p>
           <a href="/api/template" download className="text-link">
             <Download size={15} />
-            Download CSV template
+            {t("Download CSV template")}
           </a>
         </div>
       </div>
       <div className="import-steps">
         <span className="step-number">2</span>
         <div>
-          <strong>Choose your CSV file</strong>
+          <strong>{t("Choose your CSV file")}</strong>
           <p>
-            UTF-8 CSV, 500 KB maximum, no more than 500 product rows. SKUs and barcodes must be
-            unique.
+            {t(
+              "UTF-8 CSV, 500 KB maximum, no more than 500 product rows. SKUs and barcodes must be unique.",
+            )}
           </p>
         </div>
       </div>
-      <form
+      <LocalizedForm
         id={`${id}-import`}
         onSubmit={async (event) => {
           event.preventDefault();
           if (!csv.trim()) return;
           const result = await mutation.submit("import", { csv });
-          if (result) onSuccess("Products imported successfully. Your inventory is up to date.");
+          if (result)
+            onSuccess(
+              sourceMessage("Products imported successfully. Your inventory is up to date."),
+            );
         }}
       >
         {(fileError || mutation.error) && <Notice>{fileError || mutation.error}</Notice>}
         <label className="file-picker" htmlFor={`${id}-file`}>
           <FileSpreadsheet size={25} aria-hidden="true" />
           <span>
-            <strong>{filename || "Select a CSV file"}</strong>
-            <small>{reading ? "Reading your file…" : "Choose file to browse"}</small>
+            <strong>{filename || t("Select a CSV file")}</strong>
+            <small>{reading ? t("Reading your file…") : t("Choose file to browse")}</small>
           </span>
           <input
             id={`${id}-file`}
@@ -792,7 +846,9 @@ export function ImportDialog({ onClose, onSuccess }: Done) {
               setFilename(file.name);
               if (file.size > 500000) {
                 setFileError(
-                  "Choose a CSV no larger than 500 KB and no more than 500 product rows.",
+                  sourceMessage(
+                    "Choose a CSV no larger than 500 KB and no more than 500 product rows.",
+                  ),
                 );
                 return;
               }
@@ -800,7 +856,9 @@ export function ImportDialog({ onClose, onSuccess }: Done) {
               try {
                 setCsv(await file.text());
               } catch {
-                setFileError("Couldn’t read that file. Save it as a UTF-8 CSV and try again.");
+                setFileError(
+                  sourceMessage("Couldn’t read that file. Save it as a UTF-8 CSV and try again."),
+                );
               } finally {
                 setReading(false);
               }
@@ -809,15 +867,16 @@ export function ImportDialog({ onClose, onSuccess }: Done) {
         </label>
         {csv && (
           <div className="csv-preview">
-            <span className="eyebrow">FILE PREVIEW · FIRST LINES</span>
+            <span className="eyebrow">{t("FILE PREVIEW · FIRST LINES")}</span>
             <pre>{csv.split(/\r?\n/).slice(0, 5).join("\n").slice(0, 1600)}</pre>
           </div>
         )}
         <Notice tone="info">
-          Import adds new products; it does not overwrite existing ones. If any row fails
-          validation, nothing is imported.
+          {t(
+            "Import adds new products; it does not overwrite existing ones. If any row fails validation, nothing is imported.",
+          )}
         </Notice>
-      </form>
+      </LocalizedForm>
     </Modal>
   );
 }

@@ -1,4 +1,6 @@
 "use client";
+import { message as sourceMessage } from "@/lib/translations";
+import { useT } from "./preferences";
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,6 +10,7 @@ import { AuthLayout } from "./auth-view";
 import { Button, Notice } from "./ui";
 
 export function AccessRevokedView({ email }: { email: string }) {
+  const t = useT();
   const router = useRouter();
   const inFlight = useRef(false);
   const [pending, setPending] = useState(false);
@@ -23,28 +26,31 @@ export function AccessRevokedView({ email }: { email: string }) {
       router.replace("/login");
       router.refresh();
     } catch {
-      setError("Couldn’t sign out. Please try again.");
+      setError(sourceMessage("Couldn’t sign out. Please try again."));
       inFlight.current = false;
       setPending(false);
     }
   }
   return (
-    <AuthLayout eyebrow="PROTECTED SHOP ACCESS">
+    <AuthLayout eyebrow={t("PROTECTED SHOP ACCESS")}>
       <div className="auth-form-wrap">
         <ShieldAlert size={30} className="amber-text" aria-hidden="true" />
-        <h2 style={{ marginTop: 20 }}>Access revoked</h2>
+        <h2 style={{ marginTop: 20 }}>{t("Access revoked")}</h2>
         <p className="auth-subtitle">
-          Your account is signed in, but its access to this shop has been removed. Contact the shop
-          owner if you believe this is a mistake.
+          {t(
+            "Your account is signed in, but its access to this shop has been removed. Contact the shop owner if you believe this is a mistake.",
+          )}
         </p>
         <Notice tone="info">
-          Signed in as {email}. Shop records are no longer accessible. Historical transactions have
-          been preserved.
+          {t("Signed in as")} {email}
+          {t(
+            ". Shop records are no longer accessible. Historical transactions have been preserved.",
+          )}
         </Notice>
         {error && <Notice>{error}</Notice>}
         <Button className="full-width" onClick={signOut} pending={pending}>
           <LogOut size={16} />
-          Sign out
+          {t("Sign out")}
         </Button>
       </div>
     </AuthLayout>

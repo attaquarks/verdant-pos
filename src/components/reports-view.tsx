@@ -1,4 +1,5 @@
 "use client";
+import { useMessage, useT } from "./preferences";
 
 import {
   Banknote,
@@ -23,19 +24,21 @@ export function ReportsView({
   shop: Shop;
   range: DateRange;
 }) {
+  const t = useT();
+  const m = useMessage();
   const summary = report.summary;
   return (
     <>
       <PageHeading
-        title="Reports"
-        subtitle="Sales performance, costs, and cash — with the distinctions that matter."
+        title={t("Reports")}
+        subtitle={t("Sales performance, costs, and cash — with the distinctions that matter.")}
         actions={
           <a
             href={`/api/export?type=report&from=${range.from}&to=${range.to}`}
             className="button button--secondary"
           >
             <Download size={16} />
-            Export report
+            {t("Export report")}
           </a>
         }
       />
@@ -47,52 +50,56 @@ export function ReportsView({
       </div>
       {summary.unknown_cost_lines > 0 && (
         <Notice tone="warning">
-          {summary.unknown_cost_lines.toLocaleString()} sale{" "}
-          {summary.unknown_cost_lines === 1 ? "line has" : "lines have"} unknown historical cost.
-          Gross and net profit are unavailable for this period; known costs below are not complete
-          costs.
+          {summary.unknown_cost_lines.toLocaleString()} {t("sale")}{" "}
+          {summary.unknown_cost_lines === 1 ? t("line has") : t("lines have")}{" "}
+          {t(
+            "unknown historical cost. Gross and net profit are unavailable for this period; known costs below are not complete costs.",
+          )}
         </Notice>
       )}
       <div className="metric-grid">
         <Metric
-          label="Net revenue"
+          label={t("Net revenue")}
           value={money(summary.revenue, shop.currency)}
-          detail={`${summary.sales_count.toLocaleString()} sales · ${quantity(summary.units)} net units`}
+          detail={t("{v0} sales · {v1} net units", {
+            v0: summary.sales_count.toLocaleString(),
+            v1: quantity(summary.units),
+          })}
           icon={CircleDollarSign}
           tone="green"
         />
         <Metric
-          label="Gross profit"
+          label={t("Gross profit")}
           value={
             summary.gross_profit === null ? (
-              <span className="metric-unavailable">Unavailable</span>
+              <span className="metric-unavailable">{t("Unavailable")}</span>
             ) : (
               money(summary.gross_profit, shop.currency)
             )
           }
           detail={
             summary.gross_profit === null
-              ? "Historical cost is missing"
-              : "Net revenue less cost of goods"
+              ? t("Historical cost is missing")
+              : t("Net revenue less cost of goods")
           }
           icon={TrendingUp}
         />
         <Metric
-          label="Operating expenses"
+          label={t("Operating expenses")}
           value={money(summary.expenses, shop.currency)}
-          detail="Recorded expenses in this period"
+          detail={t("Recorded expenses in this period")}
           icon={Receipt}
         />
         <Metric
-          label="Estimated net profit"
+          label={t("Estimated net profit")}
           value={
             summary.estimated_net_profit === null ? (
-              <span className="metric-unavailable">Unavailable</span>
+              <span className="metric-unavailable">{t("Unavailable")}</span>
             ) : (
               money(summary.estimated_net_profit, shop.currency)
             )
           }
-          detail="Gross profit less recorded expenses"
+          detail={t("Gross profit less recorded expenses")}
           icon={ChartNoAxesCombined}
         />
       </div>
@@ -100,12 +107,14 @@ export function ReportsView({
         <section className="panel">
           <div className="panel-heading">
             <div>
-              <h2>Revenue trend</h2>
-              <p>{range.label} · Returns on the date recorded</p>
+              <h2>{t("Revenue trend")}</h2>
+              <p>
+                {m(range.label)} {t("· Returns on the date recorded")}
+              </p>
             </div>
             <span className="chart-legend">
               <i />
-              Net revenue
+              {t("Net revenue")}
             </span>
           </div>
           <RevenueChart data={report.trend} currency={shop.currency} />
@@ -113,8 +122,10 @@ export function ReportsView({
         <section className="panel">
           <div className="panel-heading">
             <div>
-              <h2>Revenue by category</h2>
-              <p>Top categories · {shop.currency}</p>
+              <h2>{t("Revenue by category")}</h2>
+              <p>
+                {t("Top categories ·")} {shop.currency}
+              </p>
             </div>
           </div>
           <CategoryChart data={report.categories} currency={shop.currency} />
@@ -124,40 +135,42 @@ export function ReportsView({
         <section className="panel">
           <div className="panel-heading">
             <div>
-              <h2>Profit breakdown</h2>
-              <p>Recognized sales, not money collected</p>
+              <h2>{t("Profit breakdown")}</h2>
+              <p>{t("Recognized sales, not money collected")}</p>
             </div>
           </div>
           <dl className="report-breakdown">
             <div>
-              <dt>Net sales revenue</dt>
+              <dt>{t("Net sales revenue")}</dt>
               <dd>{money(summary.revenue, shop.currency)}</dd>
             </div>
             <div>
               <dt>
-                {summary.unknown_cost_lines ? "Known cost of goods only" : "Cost of goods sold"}
+                {summary.unknown_cost_lines
+                  ? t("Known cost of goods only")
+                  : t("Cost of goods sold")}
               </dt>
               <dd>{money(summary.cost_of_goods, shop.currency)}</dd>
             </div>
             <div className="breakdown-subtotal">
-              <dt>Gross profit</dt>
+              <dt>{t("Gross profit")}</dt>
               <dd>
                 {summary.gross_profit === null ? (
-                  <span className="unavailable">Unavailable</span>
+                  <span className="unavailable">{t("Unavailable")}</span>
                 ) : (
                   money(summary.gross_profit, shop.currency)
                 )}
               </dd>
             </div>
             <div>
-              <dt>Operating expenses</dt>
+              <dt>{t("Operating expenses")}</dt>
               <dd>{money(summary.expenses, shop.currency)}</dd>
             </div>
             <div className="breakdown-total">
-              <dt>Estimated net profit</dt>
+              <dt>{t("Estimated net profit")}</dt>
               <dd>
                 {summary.estimated_net_profit === null ? (
-                  <span className="unavailable">Unavailable</span>
+                  <span className="unavailable">{t("Unavailable")}</span>
                 ) : (
                   money(summary.estimated_net_profit, shop.currency)
                 )}
@@ -166,110 +179,115 @@ export function ReportsView({
           </dl>
           {summary.unknown_cost_lines > 0 && (
             <p className="panel-inline-note">
-              Known-cost gross profit: {money(summary.known_gross_profit, shop.currency)}. This is
-              partial information, not the shop’s total profit.
+              {t("Known-cost gross profit:")} {money(summary.known_gross_profit, shop.currency)}
+              {t(". This is partial information, not the shop’s total profit.")}
             </p>
           )}
         </section>
         <section className="panel">
           <div className="panel-heading">
             <div>
-              <h2>Receipts & credit</h2>
-              <p>Collections are cash movement, not new revenue</p>
+              <h2>{t("Receipts & credit")}</h2>
+              <p>{t("Collections are cash movement, not new revenue")}</p>
             </div>
           </div>
           <dl className="report-breakdown">
             <div>
-              <dt>Cash received</dt>
+              <dt>{t("Cash received")}</dt>
               <dd>{money(summary.cash_received, shop.currency)}</dd>
             </div>
             <div>
-              <dt>Digital received</dt>
+              <dt>{t("Digital received")}</dt>
               <dd>{money(summary.digital_received, shop.currency)}</dd>
             </div>
             <div>
               <dt>
-                Credit sales <span className="muted">(not cash)</span>
+                {t("Credit sales")} <span className="muted">{t("(not cash)")}</span>
               </dt>
               <dd>{money(summary.credit_sales, shop.currency)}</dd>
             </div>
             <div>
-              <dt>Refunds paid</dt>
+              <dt>{t("Refunds paid")}</dt>
               <dd>{money(summary.refunds, shop.currency)}</dd>
             </div>
             <div className="breakdown-total">
               <dt>
-                Net money movement <span className="muted">(all methods)</span>
+                {t("Net money movement")} <span className="muted">{t("(all methods)")}</span>
               </dt>
               <dd>{money(summary.net_cash_movement, shop.currency)}</dd>
             </div>
           </dl>
           <p className="panel-inline-note">
-            Money movement includes supplier payments, expenses, and owner deposits / withdrawals.
-            It is not profit.
+            {t(
+              "Money movement includes supplier payments, expenses, and owner deposits / withdrawals. It is not profit.",
+            )}
           </p>
         </section>
       </div>
       <section className="panel">
         <div className="panel-heading">
           <div>
-            <h2>Product performance</h2>
-            <p>Original sale snapshots, net of return adjustments · sorted by net revenue</p>
+            <h2>{t("Product performance")}</h2>
+            <p>{t("Original sale snapshots, net of return adjustments · sorted by net revenue")}</p>
           </div>
           <span className="muted small-text">
-            {report.products.length.toLocaleString()} products
+            {report.products.length.toLocaleString()} {t("products")}
           </span>
         </div>
         {!report.products.length ? (
           <EmptyState
             compact
             icon={ChartNoAxesCombined}
-            title="No product activity in this period"
-            description="Sales and returns will build this report. Try a different date range."
+            title={t("No product activity in this period")}
+            description={t("Sales and returns will build this report. Try a different date range.")}
           />
         ) : (
           <div className="table-scroll">
             <table className="data-table responsive-table report-products-table">
-              <caption className="sr-only">Product performance for {range.label}</caption>
+              <caption className="sr-only">
+                {t("Product performance for")} {m(range.label)}
+              </caption>
               <thead>
                 <tr>
-                  <th>Product</th>
-                  <th>Category</th>
-                  <th className="numeric">Net units</th>
-                  <th className="numeric">Net revenue</th>
-                  <th className="numeric">Cost of goods</th>
-                  <th className="numeric">Gross profit</th>
+                  <th>{t("Product")}</th>
+                  <th>{t("Category")}</th>
+                  <th className="numeric">{t("Net units")}</th>
+                  <th className="numeric">{t("Net revenue")}</th>
+                  <th className="numeric">{t("Cost of goods")}</th>
+                  <th className="numeric">{t("Gross profit")}</th>
                 </tr>
               </thead>
               <tbody>
                 {report.products.map((product) => (
                   <tr key={product.product_id}>
-                    <td data-label="Product">
+                    <td data-label={t("Product")}>
                       <strong className="table-strong">{product.name}</strong>
-                      <span className="cell-meta">{product.sku || "No SKU"}</span>
+                      <span className="cell-meta">{product.sku || t("No SKU")}</span>
                     </td>
-                    <td data-label="Category">{product.category || "Uncategorized"}</td>
-                    <td data-label="Net units" className="numeric">
+                    <td data-label={t("Category")}>{product.category || t("Uncategorized")}</td>
+                    <td data-label={t("Net units")} className="numeric">
                       {quantity(product.units)}
                     </td>
-                    <td data-label="Net revenue" className="numeric amount-cell">
+                    <td data-label={t("Net revenue")} className="numeric amount-cell">
                       {money(product.revenue, shop.currency)}
                     </td>
-                    <td data-label="Cost of goods" className="numeric">
+                    <td data-label={t("Cost of goods")} className="numeric">
                       {product.unknown_cost_lines > 0 ? (
                         <span
                           className="unavailable"
-                          title={`${product.unknown_cost_lines} lines have unknown cost`}
+                          title={t("{v0} lines have unknown cost", {
+                            v0: product.unknown_cost_lines,
+                          })}
                         >
-                          Incomplete
+                          {t("Incomplete")}
                         </span>
                       ) : (
                         money(product.cost, shop.currency)
                       )}
                     </td>
-                    <td data-label="Gross profit" className="numeric">
+                    <td data-label={t("Gross profit")} className="numeric">
                       {product.gross_profit === null ? (
-                        <span className="unavailable">Unavailable</span>
+                        <span className="unavailable">{t("Unavailable")}</span>
                       ) : (
                         money(product.gross_profit, shop.currency)
                       )}
@@ -284,8 +302,8 @@ export function ReportsView({
       <section className="panel">
         <div className="panel-heading">
           <div>
-            <h2>Cashbook by payment method</h2>
-            <p>All receipts and outflows for the selected dates</p>
+            <h2>{t("Cashbook by payment method")}</h2>
+            <p>{t("All receipts and outflows for the selected dates")}</p>
           </div>
           <Banknote size={19} className="muted" aria-hidden="true" />
         </div>
@@ -293,19 +311,19 @@ export function ReportsView({
           <EmptyState
             compact
             icon={Banknote}
-            title="No cash or digital movements"
-            description="Recorded receipts, refunds, and payments will appear here."
+            title={t("No cash or digital movements")}
+            description={t("Recorded receipts, refunds, and payments will appear here.")}
           />
         ) : (
           <div className="table-scroll">
             <table className="data-table">
-              <caption className="sr-only">Money movement by payment method</caption>
+              <caption className="sr-only">{t("Money movement by payment method")}</caption>
               <thead>
                 <tr>
-                  <th>Method</th>
-                  <th className="numeric">Money in</th>
-                  <th className="numeric">Money out</th>
-                  <th className="numeric">Net movement</th>
+                  <th>{t("Method")}</th>
+                  <th className="numeric">{t("Money in")}</th>
+                  <th className="numeric">{t("Money out")}</th>
+                  <th className="numeric">{t("Net movement")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -325,9 +343,10 @@ export function ReportsView({
         )}
       </section>
       <p className="page-footnote">
-        Dates use {shop.time_zone.replaceAll("_", " ")}. Weeks start on Monday. Credit sales create
-        receivables; their collections never count as revenue again. Estimated net profit excludes
-        any costs not recorded in this app.
+        {t("Dates use")} {shop.time_zone.replaceAll("_", " ")}
+        {t(
+          ". Weeks start on Monday. Credit sales create receivables; their collections never count as revenue again. Estimated net profit excludes any costs not recorded in this app.",
+        )}
       </p>
     </>
   );

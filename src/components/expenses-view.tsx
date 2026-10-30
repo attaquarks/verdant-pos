@@ -1,10 +1,11 @@
 "use client";
+import { LocalizedForm, useDateFormatter, useMessage, useT } from "./preferences";
 
 import { useId, useState } from "react";
 import { Download, Plus, Receipt } from "lucide-react";
 import type { DateRange, Expense, PageResult, Shop } from "../lib/types";
 import { money } from "../lib/money";
-import { formatDate } from "../lib/dates";
+
 import { todayInZone, useMutation } from "./hooks";
 import {
   Button,
@@ -29,13 +30,16 @@ export function ExpensesView({
   range: DateRange;
   total: string;
 }) {
+  const formatDate = useDateFormatter();
+  const t = useT();
+  const m = useMessage();
   const [open, setOpen] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   return (
     <>
       <PageHeading
-        title="Expenses"
-        subtitle="Keep daily operating costs out of your head and in your books."
+        title={t("Expenses")}
+        subtitle={t("Keep daily operating costs out of your head and in your books.")}
         actions={
           <>
             <a
@@ -43,11 +47,11 @@ export function ExpensesView({
               className="button button--secondary"
             >
               <Download size={16} />
-              Export
+              {t("Export")}
             </a>
             <Button onClick={() => setOpen(true)}>
               <Plus size={17} />
-              Add expense
+              {t("Add expense")}
             </Button>
           </>
         }
@@ -68,67 +72,71 @@ export function ExpensesView({
           <Receipt size={21} aria-hidden="true" />
         </div>
         <div>
-          <span>Total operating expenses</span>
+          <span>{t("Total operating expenses")}</span>
           <strong>{money(total, shop.currency)}</strong>
         </div>
         <span className="expense-total-period">
-          {range.label} <span aria-hidden="true">·</span> {expenses.count.toLocaleString()}{" "}
-          {expenses.count === 1 ? "expense" : "expenses"}
+          {m(range.label)} <span aria-hidden="true">·</span> {expenses.count.toLocaleString()}{" "}
+          {expenses.count === 1 ? t("expense") : t("expenses")}
         </span>
       </div>
       <section className="panel">
         <div className="panel-heading">
           <div>
-            <h2>Expense ledger</h2>
-            <p>Saved expenses automatically create cashbook outflows.</p>
+            <h2>{t("Expense ledger")}</h2>
+            <p>{t("Saved expenses automatically create cashbook outflows.")}</p>
           </div>
-          <span className="muted small-text">Most recent first</span>
+          <span className="muted small-text">{t("Most recent first")}</span>
         </div>
         {!expenses.rows.length ? (
           <EmptyState
             icon={Receipt}
-            title="No expenses in this period"
-            description="Record rent, utilities, transport, or other operating costs to keep your profit estimate useful."
+            title={t("No expenses in this period")}
+            description={t(
+              "Record rent, utilities, transport, or other operating costs to keep your profit estimate useful.",
+            )}
             action={
               <Button onClick={() => setOpen(true)}>
                 <Plus size={16} />
-                Add your first expense
+                {t("Add your first expense")}
               </Button>
             }
           />
         ) : (
           <div className="table-scroll">
             <table className="data-table responsive-table">
-              <caption className="sr-only">Operating expenses for {range.label}</caption>
+              <caption className="sr-only">
+                {t("Operating expenses for")} {m(range.label)}
+              </caption>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Category</th>
-                  <th>Paid with</th>
-                  <th className="numeric">Amount</th>
+                  <th>{t("Date")}</th>
+                  <th>{t("Description")}</th>
+                  <th>{t("Category")}</th>
+                  <th>{t("Paid with")}</th>
+                  <th className="numeric">{t("Amount")}</th>
                 </tr>
               </thead>
               <tbody>
                 {expenses.rows.map((expense) => (
                   <tr key={expense.id}>
-                    <td data-label="Date">
+                    <td data-label={t("Date")}>
                       {formatDate(expense.occurred_at, shop.time_zone, {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
                       })}
                     </td>
-                    <td data-label="Description">
+                    <td data-label={t("Description")}>
                       <strong className="table-strong">{expense.description}</strong>
                     </td>
-                    <td data-label="Category">
+                    <td data-label={t("Category")}>
                       <span className="category-text">{expense.category}</span>
                     </td>
-                    <td data-label="Paid with">
+                    <td data-label={t("Paid with")}>
                       <PaymentBadge method={expense.method} />
                     </td>
-                    <td data-label="Amount" className="numeric amount-cell">
+                    <td data-label={t("Amount")} className="numeric amount-cell">
                       {money(expense.amount, shop.currency)}
                     </td>
                   </tr>
@@ -137,11 +145,12 @@ export function ExpensesView({
             </table>
           </div>
         )}
-        <Pagination result={expenses} noun="expenses" />
+        <Pagination result={expenses} noun={t("expenses")} />
       </section>
       <p className="page-footnote">
-        Inventory purchases belong in Receive stock, not operating expenses. Owner withdrawals are
-        recorded in the cashbook and do not reduce profit.
+        {t(
+          "Inventory purchases belong in Receive stock, not operating expenses. Owner withdrawals are recorded in the cashbook and do not reduce profit.",
+        )}
       </p>
       {open && (
         <ExpenseDialog
@@ -166,24 +175,25 @@ function ExpenseDialog({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const t = useT();
   const id = useId();
   const mutation = useMutation();
   return (
     <Modal
-      title="Add an expense"
-      description="Record an operating cost that has been paid."
+      title={t("Add an expense")}
+      description={t("Record an operating cost that has been paid.")}
       onClose={onClose}
       busy={mutation.pending}
       footer={
         <FormActions
           form={`${id}-expense`}
-          label="Save expense"
+          label={t("Save expense")}
           pending={mutation.pending}
           onCancel={onClose}
         />
       }
     >
-      <form
+      <LocalizedForm
         id={`${id}-expense`}
         onSubmit={async (event) => {
           event.preventDefault();
@@ -202,12 +212,12 @@ function ExpenseDialog({
         <fieldset className="plain-fieldset form-grid" disabled={mutation.pending}>
           <label className="field field--full">
             <span>
-              What was it for? <span className="required-text">*</span>
+              {t("What was it for?")} <span className="required-text">*</span>
             </span>
             <input
               data-autofocus
               name="description"
-              placeholder="A short, useful description"
+              placeholder={t("A short, useful description")}
               minLength={3}
               maxLength={240}
               required
@@ -215,18 +225,18 @@ function ExpenseDialog({
           </label>
           <label className="field field--full">
             <span>
-              Expense category <span className="required-text">*</span>
+              {t("Expense category")} <span className="required-text">*</span>
             </span>
             <input
               name="category"
               maxLength={80}
-              placeholder="e.g. Rent, utilities, transport"
+              placeholder={t("e.g. Rent, utilities, transport")}
               required
             />
           </label>
           <label className="field">
             <span>
-              Amount · {shop.currency} <span className="required-text">*</span>
+              {t("Amount ·")} {shop.currency} <span className="required-text">*</span>
             </span>
             <input
               type="number"
@@ -240,27 +250,31 @@ function ExpenseDialog({
             />
           </label>
           <label className="field">
-            <span>Paid with</span>
+            <span>{t("Paid with")}</span>
             <select name="method" defaultValue="cash">
-              <option value="cash">Cash</option>
-              <option value="digital">Digital</option>
+              <option value="cash">{t("Cash")}</option>
+              <option value="digital">{t("Digital")}</option>
             </select>
           </label>
           <label className="field field--full">
-            <span>Expense date</span>
+            <span>{t("Expense date")}</span>
             <input
               name="occurred_on"
               type="date"
               defaultValue={todayInZone(shop.time_zone)}
               required
             />
-            <span className="form-hint">Recorded in {shop.time_zone.replaceAll("_", " ")}.</span>
+            <span className="form-hint">
+              {t("Recorded in")} {shop.time_zone.replaceAll("_", " ")}.
+            </span>
           </label>
           <p className="form-hint field--full">
-            Saved expenses are permanent ledger records. Check the amount and date before posting.
+            {t(
+              "Saved expenses are permanent ledger records. Check the amount and date before posting.",
+            )}
           </p>
         </fieldset>
-      </form>
+      </LocalizedForm>
     </Modal>
   );
 }

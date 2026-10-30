@@ -1,9 +1,10 @@
 "use client";
+import { useT, useDateFormatter } from "./preferences";
 
 import { useId } from "react";
 import { ChartNoAxesCombined } from "lucide-react";
 import { money } from "../lib/money";
-import { formatDate } from "../lib/dates";
+
 import { EmptyState } from "./ui";
 
 /** Number conversion below is exclusively for SVG coordinates, never ledger arithmetic. */
@@ -14,14 +15,16 @@ export function RevenueChart({
   data: { date: string; revenue: string }[];
   currency: string;
 }) {
+  const formatDate = useDateFormatter();
+  const t = useT();
   const id = useId();
   if (!data.length || data.every((point) => Number(point.revenue) === 0))
     return (
       <EmptyState
         compact
         icon={ChartNoAxesCombined}
-        title="No revenue in this period"
-        description="Posted sales and return adjustments will appear here."
+        title={t("No revenue in this period")}
+        description={t("Posted sales and return adjustments will appear here.")}
       />
     );
   const width = 760,
@@ -56,10 +59,10 @@ export function RevenueChart({
         role="img"
         aria-labelledby={`${id}-title ${id}-desc`}
       >
-        <title id={`${id}-title`}>{`Net revenue over time, ${currency}`}</title>
+        <title id={`${id}-title`}>{t("Net revenue over time, {v0}", { v0: currency })}</title>
         <desc id={`${id}-desc`}>
-          {data.map((point) => `${point.date}: ${money(point.revenue, currency)}`).join("; ")}.
-          Returns reduce revenue on the day recorded.
+          {data.map((point) => `${point.date}: ${money(point.revenue, currency)}`).join("; ")}
+          {t(". Returns reduce revenue on the day recorded.")}
         </desc>
         {[0, 1, 2, 3, 4].map((tick) => {
           const value = minimum + (span * tick) / 4;
@@ -97,7 +100,9 @@ export function RevenueChart({
             r={data.length > 45 ? 2 : 3.5}
             className="chart-point"
           >
-            <title>{`${dateLabel(point.date)} · ${money(point.revenue, currency)}`}</title>
+            <title>
+              {t("{v0} · {v1}", { v0: dateLabel(point.date), v1: money(point.revenue, currency) })}
+            </title>
           </circle>
         ))}
         {labelIndexes.map((index) => (
@@ -123,6 +128,7 @@ export function CategoryChart({
   data: { category: string; revenue: string }[];
   currency: string;
 }) {
+  const t = useT();
   const id = useId();
   const rows = data.slice(0, 6);
   if (!rows.length || rows.every((row) => Number(row.revenue) === 0))
@@ -130,8 +136,8 @@ export function CategoryChart({
       <EmptyState
         compact
         icon={ChartNoAxesCombined}
-        title="No category revenue yet"
-        description="Category performance will follow your recorded sales."
+        title={t("No category revenue yet")}
+        description={t("Category performance will follow your recorded sales.")}
       />
     );
   const width = 680,
@@ -153,7 +159,7 @@ export function CategoryChart({
         className="bar-chart"
         aria-labelledby={`${id}-title ${id}-desc`}
       >
-        <title id={`${id}-title`}>{`Net revenue by category, ${currency}`}</title>
+        <title id={`${id}-title`}>{t("Net revenue by category, {v0}", { v0: currency })}</title>
         <desc id={`${id}-desc`}>
           {rows.map((row) => `${row.category}: ${money(row.revenue, currency)}`).join("; ")}
         </desc>
@@ -199,7 +205,9 @@ export function CategoryChart({
                 rx="3"
                 className={value < 0 ? "chart-bar chart-bar--negative" : "chart-bar"}
               >
-                <title>{`${row.category}: ${money(row.revenue, currency)}`}</title>
+                <title>
+                  {t("{v0}: {v1}", { v0: row.category, v1: money(row.revenue, currency) })}
+                </title>
               </rect>
               <text
                 x={value >= 0 ? x(value) + 8 : x(value) - 8}
