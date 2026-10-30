@@ -1,3 +1,5 @@
+"use client";
+import { PreferenceControls, useT } from "./preferences";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -12,41 +14,45 @@ import {
 import { Brand } from "./ui";
 
 export function SetupView() {
+  const t = useT();
   return (
     <div className="setup-page">
       <header className="setup-header">
         <Link href="/" className="brand-link">
           <Brand />
         </Link>
+        <PreferenceControls />
         <span className="setup-environment">
           <CircleDashed size={14} />
-          Configuration required
+          {t("Configuration required")}
         </span>
       </header>
       <main className="setup-main">
         <div className="setup-intro">
-          <span className="eyebrow">WELCOME TO VERDANT POS</span>
+          <span className="eyebrow">{t("WELCOME TO VERDANT POS")}</span>
           <h1>
-            A considered workspace.
-            <br />A real connection first.
+            {t("A considered workspace.")} <br />
+            {t("A real connection first.")}
           </h1>
           <p>
-            Your retail console is ready to configure. Connect a Supabase project to enable secure
-            accounts, inventory, and the financial ledger.
+            {t(
+              "Your retail console is ready to configure. Connect a Supabase project to enable secure accounts, inventory, and the financial ledger.",
+            )}
           </p>
           <div className="setup-truth">
             <ShieldCheck size={19} />
             <span>
-              No database is connected yet. This screen does not represent a live shop or production
-              activity.
+              {t(
+                "No database is connected yet. This screen does not represent a live shop or production activity.",
+              )}
             </span>
           </div>
         </div>
         <section className="setup-checklist panel">
           <div className="panel-heading">
             <div>
-              <h2>Get your workspace running</h2>
-              <p>For the person setting up this installation</p>
+              <h2>{t("Get your workspace running")}</h2>
+              <p>{t("For the person setting up this installation")}</p>
             </div>
             <Settings2 size={21} className="muted" />
           </div>
@@ -56,12 +62,14 @@ export function SetupView() {
               <div>
                 <h3>
                   <Database size={17} />
-                  Create and prepare a database
+                  {t("Create and prepare a database")}
                 </h3>
                 <p>
-                  Create a Supabase project. Apply the migrations in{" "}
-                  <code>supabase/migrations</code> to create shop-scoped tables, access policies,
-                  and atomic posting functions.
+                  {t("Create a Supabase project. Apply the migrations in")}{" "}
+                  <code>supabase/migrations</code>{" "}
+                  {t(
+                    "to create shop-scoped tables, access policies, and atomic posting functions.",
+                  )}
                 </p>
               </div>
             </li>
@@ -70,11 +78,13 @@ export function SetupView() {
               <div>
                 <h3>
                   <KeyRound size={17} />
-                  Add your project configuration
+                  {t("Add your project configuration")}
                 </h3>
                 <p>
-                  Copy <code>.env.example</code> to <code>.env.local</code>. Set the public project
-                  URL and publishable key, plus this application’s canonical URL.
+                  {t("Copy")} <code>.env.example</code> {t("to")} <code>.env.local</code>
+                  {t(
+                    ". Set the public project URL and publishable key, plus this application’s canonical URL.",
+                  )}
                 </p>
                 <pre className="env-example">
                   <code>
@@ -84,8 +94,8 @@ export function SetupView() {
                   </code>
                 </pre>
                 <p className="setup-key-warning">
-                  Never put a service-role key, database password, or secret key in a{" "}
-                  <code>NEXT_PUBLIC_</code> variable.
+                  {t("Never put a service-role key, database password, or secret key in a")}{" "}
+                  <code>NEXT_PUBLIC_</code> {t("variable.")}
                 </p>
               </div>
             </li>
@@ -94,12 +104,15 @@ export function SetupView() {
               <div>
                 <h3>
                   <ShieldCheck size={17} />
-                  Configure authentication
+                  {t("Configure authentication")}
                 </h3>
                 <p>
-                  Enable email authentication. Add your application URL and{" "}
-                  <code>/auth/callback</code> to Supabase’s allowed redirect URLs. Password recovery
-                  returns through that callback to <code>/reset-password</code>.
+                  {t("Enable email authentication. Add your application URL and")}{" "}
+                  <code>/auth/callback</code>{" "}
+                  {t(
+                    "to Supabase’s allowed redirect URLs. Password recovery returns through that callback to",
+                  )}{" "}
+                  <code>/reset-password</code>.
                 </p>
               </div>
             </li>
@@ -108,15 +121,15 @@ export function SetupView() {
               <div>
                 <h3>
                   <Terminal size={17} />
-                  Restart and create your shop
+                  {t("Restart and create your shop")}
                 </h3>
                 <p>
-                  Restart the Next.js server after changing environment variables. Create an
-                  account, confirm your email if required, and complete the one-time shop setup.
+                  {t(
+                    "Restart the Next.js server after changing environment variables. Create an account, confirm your email if required, and complete the one-time shop setup.",
+                  )}
                 </p>
                 <Link href="/login" className="button button--primary">
-                  Continue to sign in
-                  <ArrowRight size={16} />
+                  {t("Continue to sign in")} <ArrowRight size={16} />
                 </Link>
               </div>
             </li>
@@ -125,26 +138,26 @@ export function SetupView() {
         <section className="setup-bottom">
           <div>
             <Check size={17} />
-            <span>Real authentication</span>
+            <span>{t("Real authentication")}</span>
           </div>
           <div>
             <Check size={17} />
-            <span>Atomic stock & money records</span>
+            <span>{t("Atomic stock & money records")}</span>
           </div>
           <div>
             <Check size={17} />
-            <span>No demo business data</span>
+            <span>{t("No demo business data")}</span>
           </div>
         </section>
         <p className="setup-footnote">
-          A connected project, applied migrations, and a production deployment still need to be
-          verified in your environment. See the project README and docs for setup, backups, and
-          verification.
+          {t(
+            "A connected project, applied migrations, and a production deployment still need to be verified in your environment. See the project README and docs for setup, backups, and verification.",
+          )}
         </p>
       </main>
       <footer className="setup-footer">
         <Brand small />
-        <span>Built for the business of every day.</span>
+        <span>{t("Built for the business of every day.")}</span>
       </footer>
     </div>
   );

@@ -1,9 +1,12 @@
 "use client";
+import { LocalizedForm, useMessage, usePreferences, useT } from "./preferences";
+import { menuPosition } from "@/lib/menu-position";
 
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import {
   useEffect,
+  useLayoutEffect,
   useId,
   useRef,
   useState,
@@ -58,12 +61,13 @@ export function IconButton({
   className = "",
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { label: string }) {
+  const m = useMessage();
   return (
     <button
       type="button"
       className={`icon-button ${className}`}
-      aria-label={label}
-      title={label}
+      aria-label={m(label)}
+      title={m(label)}
       {...props}
     >
       {children}
@@ -98,12 +102,13 @@ export function PageHeading({
   actions?: ReactNode;
   eyebrow?: string;
 }) {
+  const m = useMessage();
   return (
     <div className="page-heading">
       <div>
-        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
-        <h1>{title}</h1>
-        {subtitle && <p>{subtitle}</p>}
+        {eyebrow && <div className="eyebrow">{m(eyebrow)}</div>}
+        <h1>{m(title)}</h1>
+        {subtitle && <p>{m(subtitle)}</p>}
       </div>
       {actions && <div className="heading-actions">{actions}</div>}
     </div>
@@ -140,10 +145,11 @@ export function Metric({
   icon?: LucideIcon;
   tone?: "green" | "amber";
 }) {
+  const m = useMessage();
   return (
     <div className={`metric${tone ? ` metric--${tone}` : ""}`}>
       <div className="metric-label">
-        {label}
+        {m(label)}
         {Icon && <Icon size={17} aria-hidden="true" />}
       </div>
       <div className="metric-value">{value}</div>
@@ -165,13 +171,14 @@ export function EmptyState({
   icon?: LucideIcon;
   compact?: boolean;
 }) {
+  const m = useMessage();
   return (
     <div className={`empty-state${compact ? " empty-state--compact" : ""}`}>
       <span className="empty-icon">
         <Icon size={23} strokeWidth={1.6} aria-hidden="true" />
       </span>
-      <h3>{title}</h3>
-      {description && <p>{description}</p>}
+      <h3>{m(title)}</h3>
+      {description && <p>{m(description)}</p>}
       {action && <div className="empty-action">{action}</div>}
     </div>
   );
@@ -186,13 +193,15 @@ export function Notice({
   tone?: "error" | "success" | "info" | "warning";
   onDismiss?: () => void;
 }) {
+  const m = useMessage();
+  const t = useT();
   const Icon = tone === "success" ? CheckCircle2 : AlertCircle;
   return (
     <div className={`notice notice--${tone}`} role={tone === "error" ? "alert" : "status"}>
       <Icon size={18} aria-hidden="true" />
-      <div>{children}</div>
+      <div>{typeof children === "string" ? m(children) : children}</div>
       {onDismiss && (
-        <IconButton label="Dismiss message" onClick={onDismiss}>
+        <IconButton label={t("Dismiss message")} onClick={onDismiss}>
           <X size={16} />
         </IconButton>
       )}
@@ -201,9 +210,10 @@ export function Notice({
 }
 
 export function FieldError({ id, children }: { id?: string; children?: ReactNode }) {
+  const m = useMessage();
   return children ? (
     <span id={id} className="field-error" role="alert">
-      {children}
+      {typeof children === "string" ? m(children) : children}
     </span>
   ) : null;
 }
@@ -215,6 +225,7 @@ export function LoadingView({
   compact?: boolean;
   label?: string;
 }) {
+  const m = useMessage();
   return (
     <div
       className={`loading-view${compact ? " loading-view--compact" : ""}`}
@@ -222,7 +233,7 @@ export function LoadingView({
       aria-live="polite"
     >
       <Loader2 size={24} className="spin" aria-hidden="true" />
-      <span>{label}</span>
+      <span>{m(label)}</span>
       {!compact && (
         <div className="loading-skeleton" aria-hidden="true">
           <i />
@@ -241,21 +252,23 @@ export function PageError({
   message?: string;
   reset?: () => void;
 }) {
+  const m = useMessage();
+  const t = useT();
   return (
     <div className="page-error">
       <EmptyState
         icon={AlertCircle}
-        title="Something didn’t load"
-        description={message}
+        title={t("Something didn’t load")}
+        description={m(message)}
         action={
           reset ? (
             <Button onClick={reset} variant="secondary">
               <RefreshCw size={16} />
-              Try again
+              {t("Try again")}
             </Button>
           ) : (
             <Link href="/" className="button button--secondary">
-              Back to overview
+              {t("Back to overview")}
             </Link>
           )
         }
@@ -288,6 +301,8 @@ export function Modal({
   busy?: boolean;
   className?: string;
 }) {
+  const m = useMessage();
+  const t = useT();
   const id = useId();
   const dialog = useRef<HTMLElement>(null);
   const closeRef = useRef(onClose);
@@ -386,14 +401,14 @@ export function Modal({
       >
         <div className="modal-header">
           <div>
-            <h2 id={`${id}-title`}>{title}</h2>
-            {description && <p id={`${id}-description`}>{description}</p>}
+            <h2 id={`${id}-title`}>{m(title)}</h2>
+            {description && <p id={`${id}-description`}>{m(description)}</p>}
           </div>
           <button
             type="button"
             className="icon-button modal-close"
             data-modal-close
-            aria-label="Close dialog"
+            aria-label={t("Close dialog")}
             onClick={onClose}
             disabled={busy}
           >
@@ -415,6 +430,8 @@ export function Pagination<T>({
   result: PageResult<T>;
   noun?: string;
 }) {
+  const m = useMessage();
+  const t = useT();
   const update = useQueryFilters();
   const pages = Math.max(1, Math.ceil(result.count / result.pageSize));
   const start = result.count ? (result.page - 1) * result.pageSize + 1 : 0;
@@ -422,21 +439,24 @@ export function Pagination<T>({
   return (
     <div className="pagination">
       <span>
-        {start.toLocaleString()}–{end.toLocaleString()} of {result.count.toLocaleString()} {noun}
+        {t("{v0}–{v1} of {v2} {v3}", {
+          v0: start.toLocaleString(),
+          v1: end.toLocaleString(),
+          v2: result.count.toLocaleString(),
+          v3: m(noun),
+        })}
       </span>
       <div className="pagination-controls">
-        <span className="muted">
-          Page {result.page} of {pages}
-        </span>
+        <span className="muted">{t("Page {v0} of {v1}", { v0: result.page, v1: pages })}</span>
         <IconButton
-          label="Previous page"
+          label={t("Previous page")}
           disabled={result.page <= 1}
           onClick={() => update({ page: String(result.page - 1) }, false)}
         >
           <ArrowLeft size={17} />
         </IconButton>
         <IconButton
-          label="Next page"
+          label={t("Next page")}
           disabled={result.page >= pages}
           onClick={() => update({ page: String(result.page + 1) }, false)}
         >
@@ -448,6 +468,7 @@ export function Pagination<T>({
 }
 
 export function DateRangeControl({ range }: { range: DateRange }) {
+  const t = useT();
   const update = useQueryFilters();
   const [from, setFrom] = useState(range.from);
   const [to, setTo] = useState(range.to);
@@ -456,16 +477,16 @@ export function DateRangeControl({ range }: { range: DateRange }) {
     setTo(range.to);
   }, [range.from, range.to]);
   return (
-    <form
+    <LocalizedForm
       className="date-range"
-      aria-label="Reporting date range"
+      aria-label={t("Reporting date range")}
       onSubmit={(event) => {
         event.preventDefault();
         update({ period: null, preset: "custom", from, to });
       }}
     >
       <label className="sr-only" htmlFor="range-preset">
-        Date preset
+        {t("Date preset")}
       </label>
       <select
         id="range-preset"
@@ -476,17 +497,17 @@ export function DateRangeControl({ range }: { range: DateRange }) {
           else update({ period: null, preset: "custom", from, to });
         }}
       >
-        <option value="day">Today</option>
-        <option value="week">This week</option>
-        <option value="month">This month</option>
-        <option value="custom">Custom dates</option>
+        <option value="day">{t("Today")}</option>
+        <option value="week">{t("This week")}</option>
+        <option value="month">{t("This month")}</option>
+        <option value="custom">{t("Custom dates")}</option>
       </select>
       <div className="date-inputs">
         <label>
-          <span className="sr-only">From date</span>
+          <span className="date-field-label">{t("From date")}</span>
           <input
             type="date"
-            aria-label="From date"
+            aria-label={t("From date")}
             value={from}
             onChange={(event) => setFrom(event.target.value)}
             max={to}
@@ -497,10 +518,10 @@ export function DateRangeControl({ range }: { range: DateRange }) {
           —
         </span>
         <label>
-          <span className="sr-only">To date, inclusive</span>
+          <span className="date-field-label">{t("To date, inclusive")}</span>
           <input
             type="date"
-            aria-label="To date, inclusive"
+            aria-label={t("To date, inclusive")}
             value={to}
             onChange={(event) => setTo(event.target.value)}
             min={from}
@@ -508,10 +529,10 @@ export function DateRangeControl({ range }: { range: DateRange }) {
           />
         </label>
         <Button type="submit" variant="secondary" size="sm">
-          Apply
+          {t("Apply")}
         </Button>
       </div>
-    </form>
+    </LocalizedForm>
   );
 }
 
@@ -532,24 +553,30 @@ export function ActionMenu({
   items: MenuItem[];
   children?: ReactNode;
 }) {
+  const m = useMessage();
+  const { locale } = usePreferences();
   const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState({ top: 0, right: 0 });
+  const [position, setPosition] = useState({ top: 0, left: 12 });
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const id = useId();
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
-    const place = () => {
-      const box = trigger.current?.getBoundingClientRect();
-      if (box)
-        setPosition({
-          top: Math.min(box.bottom + 6, window.innerHeight - Math.min(items.length * 42 + 16, 320)),
-          right: Math.max(12, window.innerWidth - box.right),
-        });
-    };
-    place();
+    const box = trigger.current?.getBoundingClientRect();
+    const dimensions = menu.current?.getBoundingClientRect();
+    if (box && dimensions)
+      setPosition(
+        menuPosition(
+          box,
+          dimensions,
+          { width: window.innerWidth, height: window.innerHeight },
+          locale === "ur",
+        ),
+      );
     const frame = requestAnimationFrame(() =>
-      menu.current?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')?.focus(),
+      menu.current
+        ?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')
+        ?.focus({ preventScroll: true }),
     );
     const dismiss = (event: MouseEvent) => {
       if (
@@ -559,16 +586,30 @@ export function ActionMenu({
         setOpen(false);
     };
     const close = () => setOpen(false);
+    const scroll = (event: Event) => {
+      // A constrained menu may itself scroll; only page/ancestor scrolling dismisses it.
+      if (event.target instanceof Node && menu.current?.contains(event.target)) return;
+      const current = trigger.current?.getBoundingClientRect();
+      // A click can finish scrolling its trigger into view before the queued scroll
+      // event reaches us. Dismiss only when the anchor actually moves after placement.
+      if (
+        !box ||
+        !current ||
+        Math.abs(current.top - box.top) > 0.5 ||
+        Math.abs(current.left - box.left) > 0.5
+      )
+        close();
+    };
     document.addEventListener("mousedown", dismiss);
     window.addEventListener("resize", close);
-    window.addEventListener("scroll", close, true);
+    window.addEventListener("scroll", scroll, true);
     return () => {
       cancelAnimationFrame(frame);
       document.removeEventListener("mousedown", dismiss);
       window.removeEventListener("resize", close);
-      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("scroll", scroll, true);
     };
-  }, [open, items.length]);
+  }, [open, items.length, locale]);
   const finish = (item: MenuItem) => {
     setOpen(false);
     trigger.current?.focus();
@@ -580,7 +621,7 @@ export function ActionMenu({
         type="button"
         ref={trigger}
         className={children ? "account-trigger" : "icon-button"}
-        aria-label={label}
+        aria-label={m(label)}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
@@ -596,8 +637,8 @@ export function ActionMenu({
             id={id}
             className="action-menu"
             role="menu"
-            aria-label={label}
-            style={{ top: position.top, right: position.right }}
+            aria-label={m(label)}
+            style={{ top: position.top, left: position.left }}
             onKeyDown={(event) => {
               const nodes = Array.from(
                 menu.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)') ??
@@ -627,7 +668,7 @@ export function ActionMenu({
               const content = (
                 <>
                   {Icon && <Icon size={16} aria-hidden="true" />}
-                  <span>{item.label}</span>
+                  <span>{m(item.label)}</span>
                 </>
               );
               return item.href ? (
@@ -673,14 +714,15 @@ export function FormActions({
   danger?: boolean;
   form?: string;
 }) {
+  const t = useT();
   return (
     <>
       <Button type="button" variant="secondary" onClick={onCancel} disabled={pending}>
-        Cancel
+        {t("Cancel")}
       </Button>
       <Button type="submit" form={form} pending={pending} variant={danger ? "danger" : "primary"}>
         {!pending && <Check size={16} />}
-        {pending ? "Saving…" : label}
+        {pending ? t("Saving…") : label}
       </Button>
     </>
   );

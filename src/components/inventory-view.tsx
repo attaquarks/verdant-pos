@@ -1,4 +1,5 @@
 "use client";
+import { LocalizedForm, useT } from "./preferences";
 
 import { useEffect, useState } from "react";
 import {
@@ -19,16 +20,7 @@ import type { InventoryData, Product, Shop } from "../lib/types";
 import { money, quantity, stockStatus } from "../lib/money";
 import { useQueryFilters } from "./hooks";
 import { unitCost } from "./format";
-import {
-  ActionMenu,
-  Badge,
-  Button,
-  EmptyState,
-  IconButton,
-  Notice,
-  PageHeading,
-  Pagination,
-} from "./ui";
+import { ActionMenu, Badge, Button, EmptyState, Notice, PageHeading, Pagination } from "./ui";
 import {
   AdjustDialog,
   CategoryDialog,
@@ -45,6 +37,7 @@ type ProductDialog = {
   product: Product;
 };
 export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop }) {
+  const t = useT();
   const [search, setSearch] = useState(data.filters.search);
   const [dialog, setDialog] = useState<ProductDialog | null>(null);
   const [create, setCreate] = useState(false);
@@ -84,33 +77,33 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
         }
       >
         {!product.is_active
-          ? "Inactive"
+          ? t("Inactive")
           : status === "out"
-            ? "Out of stock"
+            ? t("Out of stock")
             : status === "low"
-              ? "Low stock"
-              : "In stock"}
+              ? t("Low stock")
+              : t("In stock")}
       </Badge>
     );
   };
   return (
     <>
       <PageHeading
-        title="Inventory"
-        subtitle="Your products, stock levels, and everyday stock movements."
+        title={t("Inventory")}
+        subtitle={t("Your products, stock levels, and everyday stock movements.")}
         actions={
           <>
             <a href="/api/export?type=inventory" className="button button--secondary">
               <Download size={16} />
-              Export
+              {t("Export")}
             </a>
             <Button variant="secondary" onClick={() => setImportOpen(true)}>
               <Upload size={16} />
-              Import
+              {t("Import")}
             </Button>
             <Button onClick={() => setCreate(true)}>
               <Plus size={17} />
-              Add product
+              {t("Add product")}
             </Button>
           </>
         }
@@ -120,7 +113,7 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
           {success}
         </Notice>
       )}
-      <div className="inventory-summary" aria-label="Inventory summary">
+      <div className="inventory-summary" aria-label={t("Inventory summary")}>
         <button
           type="button"
           className={!data.filters.stock || data.filters.stock === "all" ? "is-selected" : ""}
@@ -129,7 +122,7 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
           <span className="summary-icon">
             <Package size={17} />
           </span>
-          <span>Active products</span>
+          <span>{t("Active products")}</span>
           <strong>{data.counts.active.toLocaleString()}</strong>
         </button>
         <button
@@ -140,7 +133,7 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
           <span className="summary-icon summary-icon--amber">
             <ArrowDownToLine size={17} />
           </span>
-          <span>Low stock</span>
+          <span>{t("Low stock")}</span>
           <strong>{data.counts.low.toLocaleString()}</strong>
         </button>
         <button
@@ -151,7 +144,7 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
           <span className="summary-icon summary-icon--red">
             <PackageMinus size={17} />
           </span>
-          <span>Out of stock</span>
+          <span>{t("Out of stock")}</span>
           <strong>{data.counts.out.toLocaleString()}</strong>
         </button>
         <Button
@@ -160,12 +153,12 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
           onClick={() => setCategoryOpen(true)}
         >
           <Tags size={16} />
-          New category
+          {t("New category")}
         </Button>
       </div>
-      <section className="panel inventory-panel" aria-label="Product catalog">
+      <section className="panel inventory-panel" aria-label={t("Product catalog")}>
         <div className="filter-toolbar">
-          <form
+          <LocalizedForm
             className="search-input inventory-search"
             role="search"
             onSubmit={(event) => {
@@ -175,31 +168,31 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
           >
             <Search size={17} aria-hidden="true" />
             <label htmlFor="inventory-search" className="sr-only">
-              Search products
+              {t("Search products")}
             </label>
             <input
               id="inventory-search"
               type="search"
-              placeholder="Search name, SKU, barcode…"
+              placeholder={t("Search name, SKU, barcode…")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
-            <button type="submit" className="search-submit" aria-label="Search inventory">
+            <button type="submit" className="search-submit" aria-label={t("Search inventory")}>
               <ArrowUpFromLine size={15} className="search-enter-icon" />
             </button>
-          </form>
+          </LocalizedForm>
           <div className="filters">
             <label className="filter-select">
-              <span className="sr-only">Category filter</span>
+              <span className="sr-only">{t("Category filter")}</span>
               <select
-                aria-label="Filter by category"
+                aria-label={t("Filter by category")}
                 value={data.filters.category || "all"}
                 onChange={(event) =>
                   update({ category: event.target.value === "all" ? null : event.target.value })
                 }
               >
-                <option value="all">All categories</option>
-                <option value="uncategorized">Uncategorized</option>
+                <option value="all">{t("All categories")}</option>
+                <option value="uncategorized">{t("Uncategorized")}</option>
                 {data.categories.map((category) => (
                   <option value={category.id} key={category.id}>
                     {category.name}
@@ -208,30 +201,30 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
               </select>
             </label>
             <label className="filter-select">
-              <span className="sr-only">Stock filter</span>
+              <span className="sr-only">{t("Stock filter")}</span>
               <select
-                aria-label="Filter by stock status"
+                aria-label={t("Filter by stock status")}
                 value={data.filters.stock || "all"}
                 onChange={(event) =>
                   update({ stock: event.target.value === "all" ? null : event.target.value })
                 }
               >
-                <option value="all">All stock levels</option>
-                <option value="alerts">Needs attention</option>
-                <option value="in">In stock</option>
-                <option value="low">Low stock</option>
-                <option value="out">Out of stock</option>
+                <option value="all">{t("All stock levels")}</option>
+                <option value="alerts">{t("Needs attention")}</option>
+                <option value="in">{t("In stock")}</option>
+                <option value="low">{t("Low stock")}</option>
+                <option value="out">{t("Out of stock")}</option>
               </select>
             </label>
             <label className="filter-select">
-              <span className="sr-only">Product visibility</span>
+              <span className="sr-only">{t("Product visibility")}</span>
               <select
-                aria-label="Filter active products"
+                aria-label={t("Filter active products")}
                 value={data.filters.active || "active"}
                 onChange={(event) => update({ active: event.target.value })}
               >
-                <option value="active">Active products</option>
-                <option value="archived">Inactive products</option>
+                <option value="active">{t("Active products")}</option>
+                <option value="archived">{t("Inactive products")}</option>
               </select>
             </label>
           </div>
@@ -239,41 +232,45 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
         <div className="table-meta">
           <span>
             {data.products.count.toLocaleString()}{" "}
-            {data.products.count === 1 ? "product" : "products"}
-            {filtered ? " matching filters" : " in your catalog"}
+            {data.products.count === 1 ? t("product") : t("products")}
+            {filtered ? t(" matching filters") : t(" in your catalog")}
             {filtered && (
               <button
                 className="text-link clear-filters"
                 type="button"
                 onClick={() => update({ q: null, category: null, stock: null, active: "active" })}
               >
-                Clear filters
+                {t("Clear filters")}
               </button>
             )}
           </span>
           <label className="sort-control">
             <SlidersHorizontal size={14} aria-hidden="true" />
-            <span>Sort:</span>
+            <span>{t("Sort:")}</span>
             <select
-              aria-label="Sort products"
+              aria-label={t("Sort products")}
               value={data.filters.sort || "name"}
               onChange={(event) => update({ sort: event.target.value })}
             >
-              <option value="name">Name A–Z</option>
-              <option value="stock">Stock: low to high</option>
-              <option value="price">Price: low to high</option>
-              <option value="newest">Newest first</option>
+              <option value="name">{t("Name A–Z")}</option>
+              <option value="stock">{t("Stock: low to high")}</option>
+              <option value="price">{t("Price: low to high")}</option>
+              <option value="newest">{t("Newest first")}</option>
             </select>
           </label>
         </div>
         {!data.products.rows.length ? (
           <EmptyState
             icon={Package}
-            title={filtered ? "No products match these filters" : "A well-stocked shop starts here"}
+            title={
+              filtered ? t("No products match these filters") : t("A well-stocked shop starts here")
+            }
             description={
               filtered
-                ? "Try a different search or clear the filters to see more products."
-                : "Add your first product or import a CSV to start tracking inventory and recording sales."
+                ? t("Try a different search or clear the filters to see more products.")
+                : t(
+                    "Add your first product or import a CSV to start tracking inventory and recording sales.",
+                  )
             }
             action={
               filtered ? (
@@ -281,16 +278,16 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
                   variant="secondary"
                   onClick={() => update({ q: null, category: null, stock: null, active: "active" })}
                 >
-                  Clear filters
+                  {t("Clear filters")}
                 </Button>
               ) : (
                 <div className="button-row">
                   <Button onClick={() => setCreate(true)}>
                     <Plus size={16} />
-                    Add your first product
+                    {t("Add your first product")}
                   </Button>
                   <Button variant="secondary" onClick={() => setImportOpen(true)}>
-                    Import CSV
+                    {t("Import CSV")}
                   </Button>
                 </div>
               )
@@ -299,22 +296,24 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
         ) : (
           <div className="table-scroll">
             <table className="data-table responsive-table inventory-table">
-              <caption className="sr-only">Product inventory, prices and stock levels</caption>
+              <caption className="sr-only">
+                {t("Product inventory, prices and stock levels")}
+              </caption>
               <thead>
                 <tr>
-                  <th>Product</th>
-                  <th>Category</th>
-                  <th className="numeric">Selling price</th>
-                  <th className="numeric">Unit cost</th>
-                  <th className="numeric">Stock on hand</th>
-                  <th>Status</th>
-                  <th className="actions-heading">Actions</th>
+                  <th>{t("Product")}</th>
+                  <th>{t("Category")}</th>
+                  <th className="numeric">{t("Selling price")}</th>
+                  <th className="numeric">{t("Unit cost")}</th>
+                  <th className="numeric">{t("Stock on hand")}</th>
+                  <th>{t("Status")}</th>
+                  <th className="actions-heading">{t("Actions")}</th>
                 </tr>
               </thead>
               <tbody>
                 {data.products.rows.map((product) => (
                   <tr key={product.id}>
-                    <td data-label="Product" className="product-name-cell">
+                    <td data-label={t("Product")} className="product-name-cell">
                       <button
                         type="button"
                         className="product-name-button"
@@ -327,59 +326,62 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
                           <strong>{product.name}</strong>
                           <span className="cell-meta">
                             {product.sku
-                              ? `SKU ${product.sku}`
+                              ? t("SKU {v0}", { v0: product.sku })
                               : product.barcode
-                                ? `Barcode ${product.barcode}`
-                                : "No SKU"}
+                                ? t("Barcode {v0}", { v0: product.barcode })
+                                : t("No SKU")}
                           </span>
                         </span>
                       </button>
                     </td>
-                    <td data-label="Category">
+                    <td data-label={t("Category")}>
                       <span className="category-text">
                         {product.category?.name ??
                           data.categories.find((category) => category.id === product.category_id)
                             ?.name ??
-                          "Uncategorized"}
+                          t("Uncategorized")}
                       </span>
                     </td>
-                    <td data-label="Selling price" className="numeric amount-cell">
+                    <td data-label={t("Selling price")} className="numeric amount-cell">
                       {money(product.selling_price, shop.currency)}
                     </td>
-                    <td data-label="Unit cost" className="numeric">
+                    <td data-label={t("Unit cost")} className="numeric">
                       {product.cost_price === null ? (
-                        <span className="unavailable" title="Cost has not been provided">
-                          Unknown
+                        <span className="unavailable" title={t("Cost has not been provided")}>
+                          {t("Unknown")}
                         </span>
                       ) : (
-                        unitCost(product.cost_price, shop.currency)
+                        unitCost(product.cost_price, shop.currency, t("Unavailable"))
                       )}
                     </td>
                     <td
-                      data-label="Stock on hand"
+                      data-label={t("Stock on hand")}
                       className={`numeric stock-amount stock-amount--${stockStatus(product)}`}
                     >
                       <strong>{quantity(product.current_stock)}</strong>
                       <span className="unit-text">{product.unit}</span>
                     </td>
-                    <td data-label="Status">{statusBadge(product)}</td>
-                    <td className="row-actions" data-label="Actions">
+                    <td data-label={t("Status")}>{statusBadge(product)}</td>
+                    <td className="row-actions" data-label={t("Actions")}>
                       <Button
                         variant="secondary"
                         size="sm"
                         disabled={!product.is_active || stockStatus(product) === "out"}
                         onClick={() => setDialog({ mode: "sell", product })}
                       >
-                        Sell
+                        {t("Sell")}
                       </Button>
-                      <IconButton
-                        label={`Receive ${product.name}`}
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        aria-label={t("Receive {v0}", { v0: product.name })}
                         onClick={() => setDialog({ mode: "receive", product })}
                       >
-                        <ArrowDownToLine size={17} />
-                      </IconButton>
+                        <ArrowDownToLine size={17} aria-hidden="true" />
+                        <span>{t("Receive")}</span>
+                      </Button>
                       <ActionMenu
-                        label={`More actions for ${product.name}`}
+                        label={t("More actions for {v0}", { v0: product.name })}
                         items={[
                           {
                             label: "Edit product",
@@ -415,11 +417,12 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
             </table>
           </div>
         )}
-        <Pagination result={data.products} noun="products" />
+        <Pagination result={data.products} noun={t("products")} />
       </section>
       <p className="page-footnote">
-        Stock is updated only after a delivery, sale, return, or adjustment is successfully
-        recorded.
+        {t(
+          "Stock is updated only after a delivery, sale, return, or adjustment is successfully recorded.",
+        )}
       </p>
       {(create || dialog?.mode === "edit") && (
         <ProductEditor

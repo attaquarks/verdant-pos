@@ -1,4 +1,6 @@
 "use client";
+import { LocalizedForm, useDateFormatter, useMessage, useT } from "./preferences";
+import { message as sourceMessage } from "@/lib/translations";
 
 import { useId, useState } from "react";
 import {
@@ -12,21 +14,23 @@ import {
 } from "lucide-react";
 import type { Sale, SaleDetail, SaleItem, Shop } from "../lib/types";
 import { Exact, money, quantity } from "../lib/money";
-import { formatDate } from "../lib/dates";
+
 import { optional, useMutation, useRemote } from "./hooks";
 import { unitCost } from "./format";
 import { Badge, Button, EmptyState, FormActions, LoadingView, Modal, Notice } from "./ui";
 
 export function PaymentBadge({ method }: { method: string }) {
+  const t = useT();
   const Icon = method === "cash" ? Banknote : method === "digital" ? CreditCard : Wallet;
   return (
     <span className="payment-label">
       <Icon size={14} aria-hidden="true" />
-      {method === "credit" ? "Credit" : method === "digital" ? "Digital" : "Cash"}
+      {method === "credit" ? t("Credit") : method === "digital" ? t("Digital") : t("Cash")}
     </span>
   );
 }
 export function SaleStatus({ sale }: { sale: Sale }) {
+  const m = useMessage();
   const label =
     sale.status === "reversed"
       ? "Reversed"
@@ -50,7 +54,7 @@ export function SaleStatus({ sale }: { sale: Sale }) {
             : "green"
       }
     >
-      {label}
+      {m(label)}
     </Badge>
   );
 }
@@ -66,6 +70,9 @@ export function SaleDetailsDialog({
   onClose: () => void;
   onMutation?: (message: string) => void;
 }) {
+  const formatDate = useDateFormatter();
+  const t = useT();
+  const m = useMessage();
   const remote = useRemote<SaleDetail>(`/api/sales/${saleId}`);
   const [action, setAction] = useState<"collect" | "return" | "reverse" | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -93,19 +100,19 @@ export function SaleDetailsDialog({
   return (
     <>
       <Modal
-        title={detail ? `Sale ${detail.sale.reference}` : "Sale details"}
+        title={detail ? t("Sale {v0}", { v0: detail.sale.reference }) : t("Sale details")}
         description={
           detail
             ? date(detail.sale.occurred_at)
-            : "Loading the original sale and its audit history."
+            : t("Loading the original sale and its audit history.")
         }
         wide
         onClose={onClose}
         footer={
           <>
-            <span className="muted small-text">Posted records are never deleted.</span>
+            <span className="muted small-text">{t("Posted records are never deleted.")}</span>
             <Button variant="secondary" onClick={onClose}>
-              Close
+              {t("Close")}
             </Button>
           </>
         }
@@ -116,12 +123,12 @@ export function SaleDetailsDialog({
           </Notice>
         )}
         {remote.loading ? (
-          <LoadingView compact label="Loading sale details…" />
+          <LoadingView compact label={t("Loading sale details…")} />
         ) : remote.error ? (
           <Notice>
             {remote.error}
             <Button variant="ghost" size="sm" onClick={remote.reload}>
-              Try again
+              {t("Try again")}
             </Button>
           </Notice>
         ) : detail ? (
@@ -134,23 +141,23 @@ export function SaleDetailsDialog({
                 </span>
               </div>
               <div className="detail-customer">
-                <strong>{detail.sale.customer_name || "Walk-in customer"}</strong>
+                <strong>{detail.sale.customer_name || t("Walk-in customer")}</strong>
                 {detail.sale.customer_contact && <span>{detail.sale.customer_contact}</span>}
               </div>
             </div>
             <div className="table-scroll">
               <table className="data-table detail-items-table">
                 <caption className="sr-only">
-                  Original sale item snapshots. Catalog changes do not affect these amounts.
+                  {t("Original sale item snapshots. Catalog changes do not affect these amounts.")}
                 </caption>
                 <thead>
                   <tr>
-                    <th>Original product</th>
-                    <th className="numeric">Quantity</th>
-                    <th className="numeric">Unit price</th>
-                    <th className="numeric">Discount</th>
-                    <th className="numeric">Line total</th>
-                    <th className="numeric">Original cost</th>
+                    <th>{t("Original product")}</th>
+                    <th className="numeric">{t("Quantity")}</th>
+                    <th className="numeric">{t("Unit price")}</th>
+                    <th className="numeric">{t("Discount")}</th>
+                    <th className="numeric">{t("Line total")}</th>
+                    <th className="numeric">{t("Original cost")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -160,14 +167,14 @@ export function SaleDetailsDialog({
                         <strong className="table-strong">{item.product_name}</strong>
                         <span className="cell-meta">
                           {[item.sku, item.category_name].filter(Boolean).join(" · ") ||
-                            "Uncategorized"}
+                            t("Uncategorized")}
                         </span>
                       </td>
                       <td className="numeric">
                         {quantity(item.quantity)} {item.unit}
                         {new Exact(item.returned_quantity).gt(0) && (
                           <span className="cell-meta amber-text">
-                            {quantity(item.returned_quantity)} returned
+                            {quantity(item.returned_quantity)} {t("returned")}
                           </span>
                         )}
                       </td>
@@ -178,13 +185,13 @@ export function SaleDetailsDialog({
                       </td>
                       <td className="numeric">
                         {item.cost_total === null ? (
-                          <span className="unavailable">Unavailable</span>
+                          <span className="unavailable">{t("Unavailable")}</span>
                         ) : (
                           money(item.cost_total, shop.currency)
                         )}
                         {item.unit_cost !== null && (
                           <span className="cell-meta">
-                            Unit {unitCost(item.unit_cost, shop.currency)}
+                            {t("Unit")} {unitCost(item.unit_cost, shop.currency, t("Unavailable"))}
                           </span>
                         )}
                       </td>
@@ -197,42 +204,43 @@ export function SaleDetailsDialog({
               <div className="sale-detail-notes">
                 {detail.sale.note && (
                   <>
-                    <h3>Sale note</h3>
+                    <h3>{t("Sale note")}</h3>
                     <p>{detail.sale.note}</p>
                   </>
                 )}
                 <p className="form-hint">
-                  Prices, discounts, and costs above are the original historical snapshots. Unknown
-                  costs remain unavailable.
+                  {t(
+                    "Prices, discounts, and costs above are the original historical snapshots. Unknown costs remain unavailable.",
+                  )}
                 </p>
               </div>
               <dl className="totals-list">
                 <div>
-                  <dt>Original subtotal</dt>
+                  <dt>{t("Original subtotal")}</dt>
                   <dd>{money(detail.sale.subtotal, shop.currency)}</dd>
                 </div>
                 <div>
-                  <dt>Line discounts</dt>
+                  <dt>{t("Line discounts")}</dt>
                   <dd>−{money(detail.sale.discount_total, shop.currency)}</dd>
                 </div>
                 <div>
-                  <dt>Original sale total</dt>
+                  <dt>{t("Original sale total")}</dt>
                   <dd>{money(detail.sale.total, shop.currency)}</dd>
                 </div>
                 <div>
-                  <dt>Returns / reversal</dt>
+                  <dt>{t("Returns / reversal")}</dt>
                   <dd>−{money(detail.sale.returned_total, shop.currency)}</dd>
                 </div>
                 <div className="totals-primary">
-                  <dt>Net sale value</dt>
+                  <dt>{t("Net sale value")}</dt>
                   <dd>{money(detail.sale.net_total, shop.currency)}</dd>
                 </div>
                 <div>
-                  <dt>Net payments collected</dt>
+                  <dt>{t("Net payments collected")}</dt>
                   <dd>{money(detail.sale.collected_total, shop.currency)}</dd>
                 </div>
                 <div className={new Exact(detail.sale.balance_due).gt(0) ? "totals-balance" : ""}>
-                  <dt>Balance due</dt>
+                  <dt>{t("Balance due")}</dt>
                   <dd>{money(detail.sale.balance_due, shop.currency)}</dd>
                 </div>
               </dl>
@@ -243,13 +251,13 @@ export function SaleDetailsDialog({
                   {new Exact(detail.sale.balance_due).gt(0) && (
                     <Button onClick={() => setAction("collect")}>
                       <Banknote size={16} />
-                      Collect payment
+                      {t("Collect payment")}
                     </Button>
                   )}
                   {returnable && (
                     <Button variant="secondary" onClick={() => setAction("return")}>
                       <ArrowDownLeft size={16} />
-                      Return items
+                      {t("Return items")}
                     </Button>
                   )}
                 </div>
@@ -260,7 +268,7 @@ export function SaleDetailsDialog({
                     onClick={() => setAction("reverse")}
                   >
                     <RotateCcw size={15} />
-                    Reverse entire sale
+                    {t("Reverse entire sale")}
                   </Button>
                 )}
               </div>
@@ -269,10 +277,10 @@ export function SaleDetailsDialog({
               <section className="history-section">
                 <h3>
                   <Banknote size={16} />
-                  Payment history
+                  {t("Payment history")}
                 </h3>
                 {!detail.payments.length ? (
-                  <p className="muted small-text">No money has been collected.</p>
+                  <p className="muted small-text">{t("No money has been collected.")}</p>
                 ) : (
                   <ul className="event-list">
                     {[...detail.payments]
@@ -285,11 +293,11 @@ export function SaleDetailsDialog({
                           <div>
                             <strong>
                               {payment.kind === "collection"
-                                ? "Credit collection"
+                                ? t("Credit collection")
                                 : payment.kind === "refund"
-                                  ? "Refund"
-                                  : "Sale payment"}{" "}
-                              <span className="muted">· {payment.method}</span>
+                                  ? t("Refund")
+                                  : t("Sale payment")}{" "}
+                              <span className="muted">· {m(payment.method)}</span>
                             </strong>
                             <span>{date(payment.occurred_at)}</span>
                             {payment.note && <p>{payment.note}</p>}
@@ -306,10 +314,10 @@ export function SaleDetailsDialog({
               <section className="history-section">
                 <h3>
                   <History size={16} />
-                  Adjustment history
+                  {t("Adjustment history")}
                 </h3>
                 {!detail.adjustments.length ? (
-                  <p className="muted small-text">No returns or reversals recorded.</p>
+                  <p className="muted small-text">{t("No returns or reversals recorded.")}</p>
                 ) : (
                   <ul className="event-list">
                     {[...detail.adjustments]
@@ -319,7 +327,9 @@ export function SaleDetailsDialog({
                           <span className="event-dot event-dot--amber" />
                           <div>
                             <strong>
-                              {adjustment.kind === "reversal" ? "Sale reversed" : "Items returned"}
+                              {adjustment.kind === "reversal"
+                                ? t("Sale reversed")
+                                : t("Items returned")}
                             </strong>
                             <span>{date(adjustment.occurred_at)}</span>
                             <p>{adjustment.reason}</p>
@@ -338,8 +348,8 @@ export function SaleDetailsDialog({
           <EmptyState
             compact
             icon={ShoppingBag}
-            title="Sale unavailable"
-            description="This sale may not belong to your shop."
+            title={t("Sale unavailable")}
+            description={t("This sale may not belong to your shop.")}
           />
         )}
       </Modal>
@@ -381,40 +391,43 @@ function MethodSelect({
   label?: string;
   disabled?: boolean;
 }) {
+  const t = useT();
+  const m = useMessage();
   return (
     <label className="field">
-      <span>{label}</span>
+      <span>{m(label)}</span>
       <select name={name} disabled={disabled} defaultValue="cash">
-        <option value="cash">Cash</option>
-        <option value="digital">Digital</option>
+        <option value="cash">{t("Cash")}</option>
+        <option value="digital">{t("Digital")}</option>
       </select>
     </label>
   );
 }
 
 function CollectDialog({ sale, shop, onClose, onSuccess }: { sale: Sale; shop: Shop } & Done) {
+  const t = useT();
   const id = useId();
   const mutation = useMutation();
   return (
     <Modal
-      title="Collect credit payment"
-      description={`Record money received for sale ${sale.reference}.`}
+      title={t("Collect credit payment")}
+      description={t("Record money received for sale {v0}.", { v0: sale.reference })}
       onClose={onClose}
       busy={mutation.pending}
       footer={
         <FormActions
           form={`${id}-collect`}
-          label="Record collection"
+          label={t("Record collection")}
           pending={mutation.pending}
           onCancel={onClose}
         />
       }
     >
       <div className="balance-callout">
-        <span>Outstanding balance</span>
+        <span>{t("Outstanding balance")}</span>
         <strong>{money(sale.balance_due, shop.currency)}</strong>
       </div>
-      <form
+      <LocalizedForm
         id={`${id}-collect`}
         onSubmit={async (event) => {
           event.preventDefault();
@@ -425,14 +438,14 @@ function CollectDialog({ sale, shop, onClose, onSuccess }: { sale: Sale; shop: S
             method: String(form.get("method")),
             note: optional(form.get("note")),
           });
-          if (result) onSuccess("Payment collected and added to the cashbook.");
+          if (result) onSuccess(sourceMessage("Payment collected and added to the cashbook."));
         }}
       >
         {mutation.error && <Notice>{mutation.error}</Notice>}
         <fieldset className="plain-fieldset form-grid" disabled={mutation.pending}>
           <label className="field">
             <span>
-              Amount received · {shop.currency} <span className="required-text">*</span>
+              {t("Amount received ·")} {shop.currency} <span className="required-text">*</span>
             </span>
             <input
               data-autofocus
@@ -449,16 +462,17 @@ function CollectDialog({ sale, shop, onClose, onSuccess }: { sale: Sale; shop: S
           <MethodSelect />
           <label className="field field--full">
             <span>
-              Collection note <span className="optional">(optional)</span>
+              {t("Collection note")} <span className="optional">{t("(optional)")}</span>
             </span>
             <textarea name="note" maxLength={500} rows={2} />
           </label>
           <p className="form-hint field--full">
-            Collections reduce the outstanding balance and create a receipt. They do not create
-            additional sales revenue.
+            {t(
+              "Collections reduce the outstanding balance and create a receipt. They do not create additional sales revenue.",
+            )}
           </p>
         </fieldset>
-      </form>
+      </LocalizedForm>
     </Modal>
   );
 }
@@ -470,6 +484,7 @@ function ReturnDialog({
   onClose,
   onSuccess,
 }: { detail: SaleDetail; shop: Shop } & Done) {
+  const t = useT();
   const id = useId();
   const mutation = useMutation();
   const [validation, setValidation] = useState<string | null>(null);
@@ -493,26 +508,28 @@ function ReturnDialog({
   return (
     <Modal
       wide
-      title="Return items"
-      description={`Choose the items and quantities from sale ${detail.sale.reference}.`}
+      title={t("Return items")}
+      description={t("Choose the items and quantities from sale {v0}.", {
+        v0: detail.sale.reference,
+      })}
       onClose={onClose}
       busy={mutation.pending}
       footer={
         <FormActions
           form={`${id}-return`}
-          label="Record return"
+          label={t("Record return")}
           pending={mutation.pending}
           onCancel={onClose}
         />
       }
     >
-      <form
+      <LocalizedForm
         id={`${id}-return`}
         onSubmit={async (event) => {
           event.preventDefault();
           setValidation(null);
           if (!selected.length) {
-            setValidation("Select at least one item to return.");
+            setValidation(sourceMessage("Select at least one item to return."));
             return;
           }
           const invalid = selected.some((line) => {
@@ -528,7 +545,9 @@ function ReturnDialog({
           });
           if (invalid) {
             setValidation(
-              "Return quantities must be greater than zero and cannot exceed the remaining quantity.",
+              sourceMessage(
+                "Return quantities must be greater than zero and cannot exceed the remaining quantity.",
+              ),
             );
             return;
           }
@@ -544,7 +563,11 @@ function ReturnDialog({
             refund_method: String(form.get("refund_method")),
           });
           if (result)
-            onSuccess("Return recorded. Sale balance, stock, and any refund have been updated.");
+            onSuccess(
+              sourceMessage(
+                "Return recorded. Sale balance, stock, and any refund have been updated.",
+              ),
+            );
         }}
       >
         {(validation || mutation.error) && <Notice>{validation || mutation.error}</Notice>}
@@ -568,13 +591,13 @@ function ReturnDialog({
                     <span>
                       <strong>{line.item.product_name}</strong>
                       <small>
-                        {quantity(remaining)} {line.item.unit} returnable · Original line{" "}
+                        {quantity(remaining)} {line.item.unit} {t("returnable · Original line")}{" "}
                         {money(line.item.line_total, shop.currency)}
                       </small>
                     </span>
                   </label>
                   <label className="field return-quantity">
-                    <span>Return quantity</span>
+                    <span>{t("Return quantity")}</span>
                     <input
                       type="number"
                       min="0.001"
@@ -585,7 +608,7 @@ function ReturnDialog({
                       disabled={!line.selected}
                       onChange={(event) => update(line.item.id, { quantity: event.target.value })}
                       required={line.selected}
-                      aria-label={`Return quantity for ${line.item.product_name}`}
+                      aria-label={t("Return quantity for {v0}", { v0: line.item.product_name })}
                     />
                   </label>
                   <label className="checkbox-row restock-option">
@@ -595,20 +618,21 @@ function ReturnDialog({
                       disabled={!line.selected}
                       onChange={(event) => update(line.item.id, { restock: event.target.checked })}
                     />
-                    <span>Restock</span>
+                    <span>{t("Restock")}</span>
                   </label>
                 </div>
               );
             })}
           </div>
           <p className="form-hint">
-            Uncheck Restock for damaged or unsellable items. All selected quantities still reduce
-            the net sale.
+            {t(
+              "Uncheck Restock for damaged or unsellable items. All selected quantities still reduce the net sale.",
+            )}
           </p>
           <div className="form-grid">
             <label className="field field--full">
               <span>
-                Return reason <span className="required-text">*</span>
+                {t("Return reason")} <span className="required-text">*</span>
               </span>
               <textarea
                 name="reason"
@@ -616,42 +640,46 @@ function ReturnDialog({
                 minLength={3}
                 maxLength={500}
                 required
-                placeholder="Why are these items being returned?"
+                placeholder={t("Why are these items being returned?")}
               />
             </label>
-            <MethodSelect name="refund_method" label="Refund method, if money is owed" />
+            <MethodSelect name="refund_method" label={t("Refund method, if money is owed")} />
             <div className="field">
-              <span className="field-label">Selected items</span>
+              <span className="field-label">{t("Selected items")}</span>
               <div className="read-only-value">
-                {selected.length} of {lines.length}
+                {t("{v0} of {v1}", { v0: selected.length, v1: lines.length })}
               </div>
             </div>
           </div>
           <Notice tone="info">
-            The server prorates the original discounts and costs exactly. Unpaid credit is reduced
-            first; a refund is issued only for money paid beyond the remaining sale value. The
-            adjustment is dated today.
+            {t(
+              "The server prorates the original discounts and costs exactly. Unpaid credit is reduced first; a refund is issued only for money paid beyond the remaining sale value. The adjustment is dated today.",
+            )}
           </Notice>
         </fieldset>
-      </form>
+      </LocalizedForm>
     </Modal>
   );
 }
 
 function ReverseDialog({ sale, shop, onClose, onSuccess }: { sale: Sale; shop: Shop } & Done) {
+  const t = useT();
   const id = useId();
   const mutation = useMutation();
   const [confirmed, setConfirmed] = useState(false);
   return (
     <Modal
-      title="Reverse the entire sale?"
-      description={`Sale ${sale.reference} · ${money(sale.total, shop.currency)}`}
+      title={t("Reverse the entire sale?")}
+      description={t("Sale {v0} · {v1}", {
+        v0: sale.reference,
+        v1: money(sale.total, shop.currency),
+      })}
       onClose={onClose}
       busy={mutation.pending}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={mutation.pending}>
-            Keep sale
+            {t("Keep sale")}
           </Button>
           <Button
             type="submit"
@@ -660,16 +688,17 @@ function ReverseDialog({ sale, shop, onClose, onSuccess }: { sale: Sale; shop: S
             pending={mutation.pending}
             disabled={!confirmed}
           >
-            Reverse sale
+            {t("Reverse sale")}
           </Button>
         </>
       }
     >
       <Notice tone="warning">
-        This posts a permanent reversal, restocks every original item, and refunds any money due.
-        The original sale stays visible. This cannot be undone.
+        {t(
+          "This posts a permanent reversal, restocks every original item, and refunds any money due. The original sale stays visible. This cannot be undone.",
+        )}
       </Notice>
-      <form
+      <LocalizedForm
         id={`${id}-reverse`}
         onSubmit={async (event) => {
           event.preventDefault();
@@ -681,14 +710,18 @@ function ReverseDialog({ sale, shop, onClose, onSuccess }: { sale: Sale; shop: S
             refund_method: String(form.get("refund_method")),
           });
           if (result)
-            onSuccess(`Sale ${sale.reference} reversed. The original record has been preserved.`);
+            onSuccess(
+              sourceMessage("Sale {v0} reversed. The original record has been preserved.", {
+                v0: sale.reference,
+              }),
+            );
         }}
       >
         {mutation.error && <Notice>{mutation.error}</Notice>}
         <fieldset className="plain-fieldset form-grid" disabled={mutation.pending}>
           <label className="field field--full">
             <span>
-              Reason for full reversal <span className="required-text">*</span>
+              {t("Reason for full reversal")} <span className="required-text">*</span>
             </span>
             <textarea
               data-autofocus
@@ -697,13 +730,14 @@ function ReverseDialog({ sale, shop, onClose, onSuccess }: { sale: Sale; shop: S
               minLength={3}
               maxLength={500}
               required
-              placeholder="Explain why this whole sale must be reversed"
+              placeholder={t("Explain why this whole sale must be reversed")}
             />
           </label>
-          <MethodSelect name="refund_method" label="Refund method, if money is owed" />
+          <MethodSelect name="refund_method" label={t("Refund method, if money is owed")} />
           <p className="form-hint field--full">
-            Unpaid credit is cancelled without creating a cash refund. For a sale with earlier
-            returns, return the remaining items instead.
+            {t(
+              "Unpaid credit is cancelled without creating a cash refund. For a sale with earlier returns, return the remaining items instead.",
+            )}
           </p>
           <label className="checkbox-row field--full confirmation-checkbox">
             <input
@@ -712,10 +746,12 @@ function ReverseDialog({ sale, shop, onClose, onSuccess }: { sale: Sale; shop: S
               onChange={(event) => setConfirmed(event.target.checked)}
               required
             />
-            <span>I understand this reverses the whole sale and returns all items to stock.</span>
+            <span>
+              {t("I understand this reverses the whole sale and returns all items to stock.")}
+            </span>
           </label>
         </fieldset>
-      </form>
+      </LocalizedForm>
     </Modal>
   );
 }

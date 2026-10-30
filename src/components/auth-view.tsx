@@ -1,4 +1,6 @@
 "use client";
+import { LocalizedForm, PreferenceControls, useMessage, useT } from "./preferences";
+import { message as sourceMessage } from "@/lib/translations";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,6 +28,8 @@ export function AuthLayout({
   children: ReactNode;
   eyebrow?: string;
 }) {
+  const t = useT();
+  const m = useMessage();
   return (
     <div className="auth-layout">
       <aside className="auth-aside">
@@ -33,35 +37,36 @@ export function AuthLayout({
           <Brand />
         </Link>
         <div className="auth-aside-content">
-          <span className="auth-eyebrow">{eyebrow}</span>
+          <span className="auth-eyebrow">{m(eyebrow)}</span>
           <h1>
-            A little more clarity.
-            <br />A better day in store.
+            {t("A little more clarity.")} <br />
+            {t("A better day in store.")}
           </h1>
           <p>
-            Your products, sales, and money in one considered workspace. Built for the work you do
-            every day.
+            {t(
+              "Your products, sales, and money in one considered workspace. Built for the work you do every day.",
+            )}
           </p>
           <ul className="auth-benefits">
             <li>
               <Package size={19} />
               <div>
-                <strong>Know what’s on the shelf</strong>
-                <span>Stock, deliveries, and alerts that stay in sync.</span>
+                <strong>{t("Know what’s on the shelf")}</strong>
+                <span>{t("Stock, deliveries, and alerts that stay in sync.")}</span>
               </div>
             </li>
             <li>
               <Receipt size={19} />
               <div>
-                <strong>Keep a proper record</strong>
-                <span>Sales, credit, and returns with a clear history.</span>
+                <strong>{t("Keep a proper record")}</strong>
+                <span>{t("Sales, credit, and returns with a clear history.")}</span>
               </div>
             </li>
             <li>
               <ShieldCheck size={19} />
               <div>
-                <strong>Understand your numbers</strong>
-                <span>Revenue, profit, and cash, clearly separated.</span>
+                <strong>{t("Understand your numbers")}</strong>
+                <span>{t("Revenue, profit, and cash, clearly separated.")}</span>
               </div>
             </li>
           </ul>
@@ -70,16 +75,18 @@ export function AuthLayout({
           <span className="auth-footer-mark" aria-hidden="true">
             v.
           </span>
-          <span>Less busywork. More business.</span>
+          <span>{t("Less busywork. More business.")}</span>
         </div>
       </aside>
       <main className="auth-main">
+        <PreferenceControls />
         <div className="auth-mobile-brand">
           <Brand />
         </div>
         {children}
         <div className="auth-main-footer">
-          Verdant POS <span aria-hidden="true">·</span> Retail essentials, thoughtfully connected.
+          {t("Verdant POS")} <span aria-hidden="true">·</span>{" "}
+          {t("Retail essentials, thoughtfully connected.")}
         </div>
       </main>
     </div>
@@ -87,6 +94,8 @@ export function AuthLayout({
 }
 
 export function AuthView({ mode }: { mode: "login" | "reset" }) {
+  const t = useT();
+  const m = useMessage();
   const router = useRouter();
   const [screen, setScreen] = useState<AuthScreen>(mode === "reset" ? "reset" : "login");
   const [email, setEmail] = useState("");
@@ -167,11 +176,11 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
     setError(null);
     setMessage(null);
     if ((screen === "signup" || screen === "reset") && password.length < 8) {
-      setError("Use a password with at least 8 characters.");
+      setError(sourceMessage("Use a password with at least 8 characters."));
       return;
     }
     if (screen === "reset" && password !== confirmPassword) {
-      setError("The passwords don’t match. Please enter them again.");
+      setError(sourceMessage("The passwords don’t match. Please enter them again."));
       return;
     }
     locked.current = true;
@@ -200,7 +209,9 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
           router.refresh();
         } else
           setMessage(
-            "Check your inbox for a confirmation link. Confirm your email to continue to your shop setup.",
+            sourceMessage(
+              "Check your inbox for a confirmation link. Confirm your email to continue to your shop setup.",
+            ),
           );
       } else if (screen === "forgot") {
         const { error: authError } = await client.auth.resetPasswordForEmail(email.trim(), {
@@ -208,7 +219,9 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
         });
         if (authError) throw authError;
         setMessage(
-          "If an account exists for this email, a password-reset link is on its way. Check your inbox and spam folder.",
+          sourceMessage(
+            "If an account exists for this email, a password-reset link is on its way. Check your inbox and spam folder.",
+          ),
         );
       } else {
         const { error: authError } = await client.auth.updateUser({ password });
@@ -219,7 +232,9 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
       }
     } catch (caught) {
       setError(
-        caught instanceof Error ? caught.message : "Authentication failed. Please try again.",
+        caught instanceof Error
+          ? caught.message
+          : sourceMessage("Authentication failed. Please try again."),
       );
     } finally {
       locked.current = false;
@@ -245,25 +260,24 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
   return (
     <AuthLayout>
       <div className="auth-form-wrap">
-        <span className="eyebrow">YOUR SHOP, IN FOCUS</span>
+        <span className="eyebrow">{t("YOUR SHOP, IN FOCUS")}</span>
         <h2 ref={heading} tabIndex={-1}>
-          {updated ? "You’re all set" : title}
+          {updated ? t("You’re all set") : m(title)}
         </h2>
         <p className="auth-subtitle">
-          {updated ? "Your password has been updated securely." : subtitle}
+          {updated ? t("Your password has been updated securely.") : m(subtitle)}
         </p>
         {updated ? (
           <div className="auth-confirmation">
             <CheckCircle2 size={32} aria-hidden="true" />
             <Link href="/" className="button button--primary full-width">
-              Go to your workspace
-              <ArrowRight size={17} />
+              {t("Go to your workspace")} <ArrowRight size={17} />
             </Link>
           </div>
         ) : (
           <>
             {screen === "login" || screen === "signup" ? (
-              <div className="auth-tabs" aria-label="Account access">
+              <div className="auth-tabs" aria-label={t("Account access")}>
                 <button
                   type="button"
                   className={screen === "login" ? "is-active" : ""}
@@ -271,7 +285,7 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
                   onClick={() => changeScreen("login")}
                   disabled={pending}
                 >
-                  Sign in
+                  {t("Sign in")}
                 </button>
                 <button
                   type="button"
@@ -280,19 +294,21 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
                   onClick={() => changeScreen("signup")}
                   disabled={pending}
                 >
-                  Create account
+                  {t("Create account")}
                 </button>
               </div>
             ) : null}
             {error && <Notice>{error}</Notice>}
             {message && (
               <Notice tone="success">
-                <strong>{screen === "signup" ? "Confirm your email" : "Check your inbox"}</strong>
-                <p>{message}</p>
+                <strong>
+                  {screen === "signup" ? t("Confirm your email") : t("Check your inbox")}
+                </strong>
+                <p>{m(message)}</p>
               </Notice>
             )}
             {!message && (
-              <form onSubmit={authenticate} className="auth-form">
+              <LocalizedForm onSubmit={authenticate} className="auth-form">
                 <fieldset
                   disabled={
                     pending || checkingSession || (screen === "reset" && !hasRecoverySession)
@@ -301,11 +317,12 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
                 >
                   {screen !== "reset" && (
                     <label className="field">
-                      <span>Email address</span>
+                      <span>{t("Email address")}</span>
                       <div className="input-icon">
                         <Mail size={17} aria-hidden="true" />
                         <input
                           type="email"
+                          dir="ltr"
                           autoComplete="email"
                           value={email}
                           onChange={(event) => setEmail(event.target.value)}
@@ -318,10 +335,11 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
                   )}
                   {screen !== "forgot" && (
                     <label className="field">
-                      <span>{screen === "reset" ? "New password" : "Password"}</span>
+                      <span>{screen === "reset" ? t("New password") : t("Password")}</span>
                       <div className="password-input">
                         <input
                           type={showPassword ? "text" : "password"}
+                          dir="ltr"
                           value={password}
                           onChange={(event) => setPassword(event.target.value)}
                           autoComplete={screen === "login" ? "current-password" : "new-password"}
@@ -329,13 +347,13 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
                           minLength={screen === "login" ? 1 : 8}
                           maxLength={128}
                           placeholder={
-                            screen === "login" ? "Your password" : "At least 8 characters"
+                            screen === "login" ? t("Your password") : t("At least 8 characters")
                           }
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword((value) => !value)}
-                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          aria-label={showPassword ? t("Hide password") : t("Show password")}
                           aria-pressed={showPassword}
                         >
                           {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
@@ -345,9 +363,10 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
                   )}
                   {screen === "reset" && (
                     <label className="field">
-                      <span>Confirm new password</span>
+                      <span>{t("Confirm new password")}</span>
                       <input
                         type="password"
+                        dir="ltr"
                         value={confirmPassword}
                         onChange={(event) => setConfirmPassword(event.target.value)}
                         autoComplete="new-password"
@@ -364,7 +383,7 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
                         className="text-link"
                         onClick={() => changeScreen("forgot")}
                       >
-                        Forgot password?
+                        {t("Forgot password?")}
                       </button>
                     </div>
                   )}
@@ -375,24 +394,25 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
                     disabled={checkingSession}
                   >
                     {screen === "login"
-                      ? "Sign in"
+                      ? t("Sign in")
                       : screen === "signup"
-                        ? "Create account"
+                        ? t("Create account")
                         : screen === "forgot"
-                          ? "Send reset link"
+                          ? t("Send reset link")
                           : checkingSession
-                            ? "Verifying link…"
-                            : "Update password"}
+                            ? t("Verifying link…")
+                            : t("Update password")}
                     {!pending && <ArrowRight size={17} />}
                   </Button>
                 </fieldset>
-              </form>
+              </LocalizedForm>
             )}
             {screen === "signup" && (
               <p className="auth-privacy">
                 <ShieldCheck size={15} aria-hidden="true" />
-                Your account is protected by Supabase authentication. Email confirmation may be
-                required.
+                {t(
+                  "Your account is protected by Supabase authentication. Email confirmation may be required.",
+                )}
               </p>
             )}
             {(screen === "forgot" || message) && (
@@ -403,7 +423,7 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
                 disabled={pending}
               >
                 <ArrowLeft size={15} />
-                Back to sign in
+                {t("Back to sign in")}
               </button>
             )}
             {screen === "reset" && !checkingSession && !hasRecoverySession && (
@@ -413,7 +433,7 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
                 onClick={() => changeScreen("forgot")}
               >
                 <KeyRound size={16} />
-                Request a new reset link
+                {t("Request a new reset link")}
               </button>
             )}
           </>
