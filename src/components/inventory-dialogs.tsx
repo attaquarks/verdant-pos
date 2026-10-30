@@ -1,6 +1,7 @@
 "use client";
-import { LocalizedForm, useDateFormatter, useMessage, useT } from "./preferences";
+import { LocalizedForm, useDateFormatter, useT } from "./preferences";
 import { message as sourceMessage } from "@/lib/translations";
+import { MOVEMENT_LABELS } from "@/lib/movement-labels";
 
 import { useId, useState, type FormEvent } from "react";
 import type Decimal from "decimal.js";
@@ -661,7 +662,6 @@ export function MovementsDialog({
 }) {
   const formatDate = useDateFormatter();
   const t = useT();
-  const m = useMessage();
   const remote = useRemote<{ movements: InventoryMovement[] }>(
     `/api/products/${product.id}/movements`,
   );
@@ -728,7 +728,7 @@ export function MovementsDialog({
                     <Badge
                       tone={new Exact(movement.quantity_delta).isNegative() ? "neutral" : "green"}
                     >
-                      {m(movement.kind)}
+                      {t(MOVEMENT_LABELS[movement.kind])}
                     </Badge>
                     {movement.unit_cost !== null && (
                       <span className="cell-meta">

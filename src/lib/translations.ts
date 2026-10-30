@@ -929,6 +929,7 @@ export const ur = {
   "{v0} of {v1}": "{v1} میں سے {v0}",
   opening: "شروع کی مقدار",
   receive: "آیا مال",
+  receipt: "نیا مال وصول ہوا",
   return: "واپسی",
   reversal: "منسوخی",
   correction: "گنتی کی درستی",

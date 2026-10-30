@@ -1,10 +1,12 @@
 "use client";
-import { LocalizedForm, useMessage, useT } from "./preferences";
+import { LocalizedForm, useMessage, usePreferences, useT } from "./preferences";
+import { menuPosition } from "@/lib/menu-position";
 
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import {
   useEffect,
+  useLayoutEffect,
   useId,
   useRef,
   useState,
@@ -552,24 +554,29 @@ export function ActionMenu({
   children?: ReactNode;
 }) {
   const m = useMessage();
+  const { locale } = usePreferences();
   const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState({ top: 0, right: 0 });
+  const [position, setPosition] = useState({ top: 0, left: 12 });
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const id = useId();
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
-    const place = () => {
-      const box = trigger.current?.getBoundingClientRect();
-      if (box)
-        setPosition({
-          top: Math.min(box.bottom + 6, window.innerHeight - Math.min(items.length * 42 + 16, 320)),
-          right: Math.max(12, window.innerWidth - box.right),
-        });
-    };
-    place();
+    const box = trigger.current?.getBoundingClientRect();
+    const dimensions = menu.current?.getBoundingClientRect();
+    if (box && dimensions)
+      setPosition(
+        menuPosition(
+          box,
+          dimensions,
+          { width: window.innerWidth, height: window.innerHeight },
+          locale === "ur",
+        ),
+      );
     const frame = requestAnimationFrame(() =>
-      menu.current?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')?.focus(),
+      menu.current
+        ?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')
+        ?.focus({ preventScroll: true }),
     );
     const dismiss = (event: MouseEvent) => {
       if (
@@ -579,16 +586,30 @@ export function ActionMenu({
         setOpen(false);
     };
     const close = () => setOpen(false);
+    const scroll = (event: Event) => {
+      // A constrained menu may itself scroll; only page/ancestor scrolling dismisses it.
+      if (event.target instanceof Node && menu.current?.contains(event.target)) return;
+      const current = trigger.current?.getBoundingClientRect();
+      // A click can finish scrolling its trigger into view before the queued scroll
+      // event reaches us. Dismiss only when the anchor actually moves after placement.
+      if (
+        !box ||
+        !current ||
+        Math.abs(current.top - box.top) > 0.5 ||
+        Math.abs(current.left - box.left) > 0.5
+      )
+        close();
+    };
     document.addEventListener("mousedown", dismiss);
     window.addEventListener("resize", close);
-    window.addEventListener("scroll", close, true);
+    window.addEventListener("scroll", scroll, true);
     return () => {
       cancelAnimationFrame(frame);
       document.removeEventListener("mousedown", dismiss);
       window.removeEventListener("resize", close);
-      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("scroll", scroll, true);
     };
-  }, [open, items.length]);
+  }, [open, items.length, locale]);
   const finish = (item: MenuItem) => {
     setOpen(false);
     trigger.current?.focus();
@@ -617,7 +638,7 @@ export function ActionMenu({
             className="action-menu"
             role="menu"
             aria-label={m(label)}
-            style={{ top: position.top, right: position.right }}
+            style={{ top: position.top, left: position.left }}
             onKeyDown={(event) => {
               const nodes = Array.from(
                 menu.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)') ??

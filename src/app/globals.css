@@ -750,7 +750,11 @@ kbd {
 .action-menu {
   position: fixed;
   z-index: 1300;
-  min-width: 192px;
+  min-width: min(192px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
   padding: 5px;
   background: var(--surface);
   border: 1px solid var(--line);

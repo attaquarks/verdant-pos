@@ -1,4 +1,5 @@
 import { mkdir } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import {
@@ -208,6 +209,94 @@ test("Urdu and night preferences persist from server HTML through all pages and 
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await expect(page.getByRole("heading", { name: "Inventory", exact: true })).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test("mobile action menus stay within the viewport in both directions and stock receipts are Urdu", async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(180000);
+  expect(
+    (
+      await request.post(`${FIXTURE_ORIGIN}/__fixture/reset`, {
+        headers: { [FIXTURE_CONTROL_HEADER]: FIXTURE_CONTROL_VALUE },
+      })
+    ).ok(),
+  ).toBe(true);
+  await page.goto(`${APP_ORIGIN}/login`);
+  await page.getByLabel("Email address", { exact: true }).fill(FIXTURE_CREDENTIALS.owner.email);
+  await page.getByLabel("Password", { exact: true }).fill(FIXTURE_CREDENTIALS.owner.password);
+  await page.locator("form").getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await mkdir("artifacts/screenshots", { recursive: true });
+  const products = await (
+    await page.request.get(`${APP_ORIGIN}/api/products?q=Fixture%20Rice`)
+  ).json();
+  const product = products.products.find(
+    (entry: { name: string }) => entry.name === "Fixture Rice",
+  );
+  expect(product).toBeTruthy();
+  expect(
+    (
+      await page.request.post(`${APP_ORIGIN}/api/actions/receive`, {
+        headers: { origin: APP_ORIGIN, "content-type": "application/json" },
+        data: {
+          request_id: randomUUID(),
+          product_id: product.id,
+          quantity: "1",
+          unit_cost: "4.0000",
+          supplier: null,
+          payment_method: "unpaid",
+          note: "Local RTL receipt label regression",
+        },
+      })
+    ).ok(),
+  ).toBe(true);
+  const bounds = async () => {
+    const menu = page.getByRole("menu");
+    await expect(menu).toBeVisible();
+    const box = (await menu.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(11);
+    expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width - 11);
+    expect(box.y).toBeGreaterThanOrEqual(11);
+    expect(box.y + box.height).toBeLessThanOrEqual(page.viewportSize()!.height - 11);
+    for (const item of await menu.getByRole("menuitem").all()) await expect(item).toBeVisible();
+    await noOverflow(page);
+  };
+  for (const width of [360, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    for (const locale of ["ur", "en"]) {
+      await page.goto(`${APP_ORIGIN}/inventory`);
+      const current = await page.locator("html").getAttribute("lang");
+      if (current !== locale) await page.locator(".topbar .preference-language").click();
+      await expect(page.locator("html")).toHaveAttribute("dir", locale === "ur" ? "rtl" : "ltr");
+      const account = page.locator(".account-trigger");
+      await account.click();
+      await bounds();
+      await expect(
+        page.getByRole("menuitem", {
+          name: locale === "ur" ? "سائن آؤٹ" : "Sign out",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(account).toBeFocused();
+      const rice = page.locator(".inventory-table tbody tr").filter({ hasText: "Fixture Rice" });
+      const actions = rice.locator('button[aria-haspopup="menu"]');
+      await actions.click();
+      await bounds();
+      await page.screenshot({ path: `artifacts/screenshots/menu-${locale}-${width}.png` });
+      await page.keyboard.press("Escape");
+      await expect(actions).toBeFocused();
+      if (locale === "ur") {
+        await rice.locator(".product-name-button").click();
+        const movements = page.getByRole("dialog", { name: "مال کا لین دین", exact: true });
+        await expect(movements.getByText("نیا مال وصول ہوا", { exact: true })).toBeVisible();
+        await expect(movements.locator(".badge").filter({ hasText: /^receipt$/ })).toHaveCount(0);
+        await page.keyboard.press("Escape");
+      }
+    }
+  }
 });
 
 test("blocked localStorage still persists cookies and the first render stays consistent", async ({
