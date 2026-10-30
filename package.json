@@ -18,7 +18,8 @@
     "test:concurrency": "node --import tsx scripts/test-concurrency.ts",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:cloud": "playwright test --config=playwright.cloud.config.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
