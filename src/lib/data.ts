@@ -244,15 +244,20 @@ export async function getSales(params: SearchParams) {
   const range = getDateRange(params, shop.time_zone);
   const page = pageNumber(params);
   const search = searchText(param(params, "q", param(params, "search")));
-  const method = ["cash", "digital", "credit"].includes(param(params, "method"))
-    ? param(params, "method")
-    : "";
+  const dueOnly = param(params, "due") === "1";
+  const method = dueOnly
+    ? "credit"
+    : ["cash", "digital", "credit"].includes(param(params, "method"))
+      ? param(params, "method")
+      : "";
   let query = supabase
     .from("sales_ledger")
     .select(SALE_COLUMNS, { count: "exact" })
-    .eq("shop_id", shop.id)
-    .gte("occurred_at", range.start)
-    .lt("occurred_at", range.end);
+    .eq("shop_id", shop.id);
+  // An outstanding debt is not confined to the week or month when it arose.
+  // Filtering before pagination preserves correct totals and navigation.
+  if (dueOnly) query = query.gt("balance_due", 0);
+  else query = query.gte("occurred_at", range.start).lt("occurred_at", range.end);
   if (search)
     query = query.or(
       `reference.ilike.%${search}%,product_names.ilike.%${search}%,customer_name.ilike.%${search}%`,
@@ -270,7 +275,7 @@ export async function getSales(params: SearchParams) {
       pageSize: PAGE_SIZE,
     } as PageResult<Sale>,
     range,
-    filters: { search, method },
+    filters: { search, method, dueOnly },
   };
 }
 export async function getSaleDetail(id: string): Promise<SaleDetail> {

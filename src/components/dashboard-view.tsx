@@ -35,8 +35,10 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
     <>
       <PageHeading
         title={t("Dashboard")}
-        eyebrow={t("Daily hisaab")}
-        subtitle={t("A clear view of your shop. Every number comes from your recorded activity.")}
+        subtitle={
+          t("A clear view of your shop. Every number comes from your recorded activity.") +
+          t(" · Aaj ka hisaab")
+        }
         actions={
           <>
             <Link href="/inventory" className="button button--secondary">
@@ -75,7 +77,7 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
             <strong>{t("Check stock / maal")}</strong>
             <span>{t("See what is left. Receive new deliveries here.")}</span>
           </Link>
-          <Link href="/sales?method=credit" className="task-card">
+          <Link href="/sales?due=1" className="task-card">
             <Wallet size={24} aria-hidden="true" />
             <strong>{t("Collect udhaar")}</strong>
             <span>{t("Open a credit sale and record the money received.")}</span>

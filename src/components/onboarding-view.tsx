@@ -2,10 +2,9 @@
 import { LocalizedForm, useT } from "./preferences";
 import { message as sourceMessage } from "@/lib/translations";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Store } from "lucide-react";
-import { NEW_SHOP_DEFAULTS } from "@/lib/preferences";
 import { AuthLayout } from "./auth-view";
 import { TimeZoneField } from "./settings-view";
 import { useMutation } from "./hooks";
@@ -16,8 +15,15 @@ export function OnboardingView() {
   const id = useId();
   const router = useRouter();
   const mutation = useMutation();
-  const [zone, setZone] = useState<string>(NEW_SHOP_DEFAULTS.timeZone);
-  const [currency, setCurrency] = useState<string>(NEW_SHOP_DEFAULTS.currency);
+  const [zone, setZone] = useState("UTC");
+  useEffect(() => {
+    try {
+      setZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+    } catch {
+      /* Keep UTC. */
+    }
+  }, []);
+  const [currency, setCurrency] = useState("");
   const [validation, setValidation] = useState<string | null>(null);
   const [complete, setComplete] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -29,11 +35,7 @@ export function OnboardingView() {
         <p className="auth-subtitle">
           {t("A few essentials, and you’re ready to add products and record your first sale.")}
         </p>
-        <p className="form-hint onboarding-defaults">
-          {t(
-            "New shops start with PKR and Pakistan time. You can edit these before creating the shop.",
-          )}
-        </p>
+
         <div className="onboarding-progress">
           <span className="is-current">
             <span>1</span>

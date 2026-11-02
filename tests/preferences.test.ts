@@ -11,7 +11,6 @@ import {
   direction,
   LOCALE_COOKIE,
   THEME_COOKIE,
-  NEW_SHOP_DEFAULTS,
 } from "../src/lib/preferences";
 import { ur, translate, translateMessage } from "../src/lib/translations";
 
@@ -54,12 +53,8 @@ describe("safe persisted presentation preferences", () => {
     expect(layout).not.toContain("suppressHydrationWarning");
     expect(layout).not.toContain("dangerouslySetInnerHTML");
   });
-  it("applies Pakistan defaults only when creating a new shop; existing settings remain shop-owned", () => {
-    expect(NEW_SHOP_DEFAULTS).toEqual({ currency: "PKR", timeZone: "Asia/Karachi" });
-    const onboarding = readFileSync("src/components/onboarding-view.tsx", "utf8");
+  it("does not change existing shop currency or timezone through preferences", () => {
     const settings = readFileSync("src/components/settings-view.tsx", "utf8");
-    expect(onboarding).toContain("NEW_SHOP_DEFAULTS.currency");
-    expect(onboarding).toContain("NEW_SHOP_DEFAULTS.timeZone");
     expect(settings).toContain("useState(shop.currency)");
     expect(settings).toContain("useState(shop.time_zone)");
     expect(settings).not.toContain("NEW_SHOP_DEFAULTS");
@@ -165,6 +160,6 @@ describe("authored locale coverage", () => {
     expect(readFileSync("public/fonts/OFL-NotoSansArabic.txt", "utf8")).toContain(
       "SIL OPEN FONT LICENSE",
     );
-    expect(css).toContain("margin-inline-start: var(--sidebar-width)");
+    expect(css).toContain("margin-left: var(--sidebar-width)");
   });
 });

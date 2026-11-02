@@ -41,6 +41,8 @@ export async function GET(request: Request) {
           .from(table)
           .select(selection, { count: offset === 0 ? "exact" : undefined })
           .eq("shop_id", shop!.id);
+        if (type === "sales" && params.get("due") === "1")
+          query = query.eq("payment_method", "credit").gt("balance_due", 0);
         if (dateFilter)
           query = query
             .gte("occurred_at", range.start)
@@ -86,7 +88,7 @@ export async function GET(request: Request) {
         p.is_active,
       ]);
     } else if (type === "sales") {
-      const sales = await allRows<Sale>("sales_ledger", SALE_COLUMNS);
+      const sales = await allRows<Sale>("sales_ledger", SALE_COLUMNS, params.get("due") !== "1");
       headers = [
         "sale_id",
         "reference",

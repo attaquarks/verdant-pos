@@ -116,6 +116,7 @@ export function PreferenceControls() {
       <button
         type="button"
         className="preference-theme"
+        aria-label={locale === "ur" ? "رات کا رنگ" : "Night mode"}
         aria-pressed={theme === "night"}
         onClick={() => setTheme(theme === "night" ? "light" : "night")}
       >

@@ -365,7 +365,7 @@ test("credit sale and digital collection change receivable/cashbook but never du
   await expect(
     details
       .locator("dt")
-      .filter({ hasText: /^Balance due$/ })
+      .filter({ hasText: /^Balance due \(baqi udhaar\)$/ })
       .locator("..")
       .locator("dd"),
   ).toHaveText("$0.00");

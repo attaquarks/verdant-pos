@@ -21,7 +21,7 @@ export function SalesView({
   sales: PageResult<Sale>;
   shop: Shop;
   range: DateRange;
-  filters: { search: string; method: string };
+  filters: { search: string; method: string; dueOnly: boolean };
 }) {
   const formatDate = useDateFormatter();
   const t = useT();
@@ -34,16 +34,25 @@ export function SalesView({
   useEffect(() => {
     setSearch(filters.search);
   }, [filters.search]);
-  const filtered = Boolean(filters.search || (filters.method && filters.method !== "all"));
+  const filtered = Boolean(
+    filters.dueOnly || filters.search || (filters.method && filters.method !== "all"),
+  );
   return (
     <>
       <PageHeading
         title={t("Sales")}
-        subtitle={t("Every sale, payment, and return. A complete record, not a running estimate.")}
+        subtitle={
+          t("Every sale, payment, and return. A complete record, not a running estimate.") +
+          t(" · Bikri aur udhaar")
+        }
         actions={
           <>
             <a
-              href={`/api/export?type=sales&from=${range.from}&to=${range.to}`}
+              href={
+                filters.dueOnly
+                  ? "/api/export?type=sales&due=1"
+                  : `/api/export?type=sales&from=${range.from}&to=${range.to}`
+              }
               className="button button--secondary"
             >
               <Download size={16} />
@@ -61,12 +70,23 @@ export function SalesView({
           {success}
         </Notice>
       )}
-      <div className="range-toolbar">
-        <DateRangeControl range={range} />
-        <span className="timezone-note">
-          {t("Dates in")} {shop.time_zone.replaceAll("_", " ")}
-        </span>
-      </div>
+      {filters.dueOnly ? (
+        <div className="range-toolbar">
+          <span className="timezone-note">
+            {t("Outstanding udhaar: unpaid credit sales from all dates.")}
+          </span>
+          <Button variant="secondary" size="sm" onClick={() => update({ due: null, method: null })}>
+            {t("Show all sales")}
+          </Button>
+        </div>
+      ) : (
+        <div className="range-toolbar">
+          <DateRangeControl range={range} />
+          <span className="timezone-note">
+            {t("Dates in")} {shop.time_zone.replaceAll("_", " ")}
+          </span>
+        </div>
+      )}
       <section className="panel">
         <div className="filter-toolbar">
           <LocalizedForm
@@ -97,7 +117,10 @@ export function SalesView({
             <select
               value={filters.method || "all"}
               onChange={(event) =>
-                update({ method: event.target.value === "all" ? null : event.target.value })
+                update({
+                  due: null,
+                  method: event.target.value === "all" ? null : event.target.value,
+                })
               }
               aria-label={t("Filter sales by payment method")}
             >
@@ -111,12 +134,14 @@ export function SalesView({
         <div className="table-meta">
           <span>
             {sales.count.toLocaleString()} {sales.count === 1 ? t("sale") : t("sales")}{" "}
-            <span className="muted">· {m(range.label)}</span>
+            <span className="muted">
+              · {filters.dueOnly ? t("All dates · balance due") : m(range.label)}
+            </span>
             {filtered && (
               <button
                 type="button"
                 className="text-link clear-filters"
-                onClick={() => update({ q: null, method: null })}
+                onClick={() => update({ q: null, method: null, due: null })}
               >
                 {t("Clear filters")}
               </button>
@@ -129,15 +154,20 @@ export function SalesView({
             icon={ShoppingBag}
             title={filtered ? t("No matching sales") : t("No sales in this period")}
             description={
-              filtered
-                ? t("Try a different reference, customer, product, or payment filter.")
-                : t(
-                    "Record a sale or choose a different date range. Sales appear here only after they are saved.",
-                  )
+              filters.dueOnly
+                ? t("No unpaid credit sales were found. You can view all sales instead.")
+                : filtered
+                  ? t("Try a different reference, customer, product, or payment filter.")
+                  : t(
+                      "Record a sale or choose a different date range. Sales appear here only after they are saved.",
+                    )
             }
             action={
               filtered ? (
-                <Button variant="secondary" onClick={() => update({ q: null, method: null })}>
+                <Button
+                  variant="secondary"
+                  onClick={() => update({ q: null, method: null, due: null })}
+                >
                   {t("Clear filters")}
                 </Button>
               ) : (

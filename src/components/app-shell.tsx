@@ -53,6 +53,7 @@ export function AppShell({
   const currentTitle = navigation.find((item) => item.href === pathname)?.label ?? "Workspace";
   const router = useRouter();
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [saleOpen, setSaleOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +103,7 @@ export function AppShell({
             key={href}
             href={href}
             className={`nav-link${active ? " is-active" : ""}`}
+            title={t(label)}
             aria-current={active ? "page" : undefined}
             onClick={() => setMobileMenu(false)}
           >
@@ -121,14 +123,21 @@ export function AppShell({
     </nav>
   );
   return (
-    <div className="app-shell">
+    <div className={`app-shell${collapsed ? " sidebar-collapsed" : ""}`}>
       <a className="skip-link" href="#main-content">
         {t("Skip to main content")}
       </a>
       <aside className="sidebar">
-        <Link href="/" className="brand-link" aria-label={t("Verdant POS dashboard")}>
+        <button
+          type="button"
+          className="brand-link sidebar-toggle"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-expanded={!collapsed}
+          aria-label={`${t(collapsed ? "Expand sidebar" : "Collapse sidebar")} — verdant POS`}
+          title={t(collapsed ? "Expand sidebar" : "Collapse sidebar")}
+        >
           <Brand />
-        </Link>
+        </button>
         <div className="shop-switcher">
           <span className="shop-monogram" aria-hidden="true">
             {shop.name.trim().charAt(0).toUpperCase()}
@@ -161,7 +170,6 @@ export function AppShell({
               onClick={() => setMobileMenu(true)}
             >
               <Menu size={21} />
-              <span className="mobile-menu-label">{t("Navigation")}</span>
             </IconButton>
             <span className="topbar-title">{t(currentTitle)}</span>
             <LocalizedForm action="/inventory" method="get" className="global-search" role="search">
@@ -233,28 +241,6 @@ export function AppShell({
           </span>
         </footer>
       </div>
-      <nav className="mobile-bottom-nav" aria-label={t("Quick tasks")}>
-        <Link href="/" aria-current={pathname === "/" ? "page" : undefined}>
-          <LayoutDashboard size={21} aria-hidden="true" />
-          <span>{t("Home")}</span>
-        </Link>
-        <Link href="/inventory" aria-current={pathname === "/inventory" ? "page" : undefined}>
-          <Package size={21} aria-hidden="true" />
-          <span>{t("Stock")}</span>
-        </Link>
-        <button type="button" className="mobile-new-sale" onClick={() => setSaleOpen(true)}>
-          <Plus size={23} aria-hidden="true" />
-          <span>{t("New sale")}</span>
-        </button>
-        <Link href="/sales?method=credit" aria-current={pathname === "/sales" ? "page" : undefined}>
-          <Wallet size={21} aria-hidden="true" />
-          <span>{t("Udhaar")}</span>
-        </Link>
-        <Link href="/expenses" aria-current={pathname === "/expenses" ? "page" : undefined}>
-          <Receipt size={21} aria-hidden="true" />
-          <span>{t("Expenses")}</span>
-        </Link>
-      </nav>
       {mobileMenu && (
         <Modal
           title={t("Your workspace")}

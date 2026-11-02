@@ -240,7 +240,7 @@ export function SaleDetailsDialog({
                   <dd>{money(detail.sale.collected_total, shop.currency)}</dd>
                 </div>
                 <div className={new Exact(detail.sale.balance_due).gt(0) ? "totals-balance" : ""}>
-                  <dt>{t("Balance due")}</dt>
+                  <dt>{t("Balance due (baqi udhaar)")}</dt>
                   <dd>{money(detail.sale.balance_due, shop.currency)}</dd>
                 </div>
               </dl>

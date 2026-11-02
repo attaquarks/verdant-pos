@@ -350,7 +350,7 @@ export function SaleDialog({
         <fieldset disabled={mutation.pending} className="plain-fieldset">
           <div className="sale-product-search">
             <label htmlFor={`${id}-search`} className="field-label">
-              {t("Step 1 · Choose products")}
+              {t("Add products")}
             </label>
             <div className="search-input">
               <Search size={18} aria-hidden="true" />
@@ -574,7 +574,7 @@ export function SaleDialog({
             </div>
           )}
           <div className="form-section">
-            <h3>{t("Step 2 · Payment and customer")}</h3>
+            <h3>{t("Payment")}</h3>
             <div className="payment-options">
               {(
                 [

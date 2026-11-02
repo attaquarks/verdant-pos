@@ -20,7 +20,16 @@ import type { InventoryData, Product, Shop } from "../lib/types";
 import { money, quantity, stockStatus } from "../lib/money";
 import { useQueryFilters } from "./hooks";
 import { unitCost } from "./format";
-import { ActionMenu, Badge, Button, EmptyState, Notice, PageHeading, Pagination } from "./ui";
+import {
+  ActionMenu,
+  Badge,
+  Button,
+  EmptyState,
+  IconButton,
+  Notice,
+  PageHeading,
+  Pagination,
+} from "./ui";
 import {
   AdjustDialog,
   CategoryDialog,
@@ -90,7 +99,9 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
     <>
       <PageHeading
         title={t("Inventory")}
-        subtitle={t("Your products, stock levels, and everyday stock movements.")}
+        subtitle={
+          t("Your products, stock levels, and everyday stock movements.") + t(" · Maal ka hisaab")
+        }
         actions={
           <>
             <a href="/api/export?type=inventory" className="button button--secondary">
@@ -371,15 +382,12 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
                       >
                         {t("Sell")}
                       </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        aria-label={t("Receive {v0}", { v0: product.name })}
+                      <IconButton
+                        label={t("Receive {v0}", { v0: product.name })}
                         onClick={() => setDialog({ mode: "receive", product })}
                       >
-                        <ArrowDownToLine size={17} aria-hidden="true" />
-                        <span>{t("Receive")}</span>
-                      </Button>
+                        <ArrowDownToLine size={17} />
+                      </IconButton>
                       <ActionMenu
                         label={t("More actions for {v0}", { v0: product.name })}
                         items={[

@@ -115,7 +115,7 @@ test("receiving, damage, a restocked return, expense and CSV keep stock and mone
   await expect(
     page
       .locator(".metric")
-      .filter({ has: page.getByText("Estimated net profit", { exact: true }) })
+      .filter({ has: page.getByText("Estimated net profit (andazay ka munafa)", { exact: true }) })
       .locator(".metric-value"),
   ).toHaveText("$9.00");
   await page.goto(`${APP_ORIGIN}/cashbook?preset=day`);

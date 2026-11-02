@@ -94,7 +94,10 @@ export function SettingsView({ shop, role }: { shop: Shop; role: "owner" | "staf
     <>
       <PageHeading
         title={t("Settings")}
-        subtitle={t("Shop details, reporting preferences, and taking care of your data.")}
+        subtitle={
+          t("Shop details, reporting preferences, and taking care of your data.") +
+          t(" · Dukaan ki tafseel")
+        }
       />
       <section className="panel device-preferences">
         <div>

@@ -84,7 +84,7 @@ export function Brand({ small = false }: { small?: boolean }) {
           <path d="m13 12 5 0-5 5v-5Z" fill="currentColor" />
         </svg>
       </span>
-      <span>
+      <span className="brand-text">
         verdant <span className="brand-suffix">POS</span>
       </span>
     </span>
@@ -504,7 +504,7 @@ export function DateRangeControl({ range }: { range: DateRange }) {
       </select>
       <div className="date-inputs">
         <label>
-          <span className="date-field-label">{t("From date")}</span>
+          <span className="sr-only">{t("From date")}</span>
           <input
             type="date"
             aria-label={t("From date")}
@@ -518,7 +518,7 @@ export function DateRangeControl({ range }: { range: DateRange }) {
           —
         </span>
         <label>
-          <span className="date-field-label">{t("To date, inclusive")}</span>
+          <span className="sr-only">{t("To date, inclusive")}</span>
           <input
             type="date"
             aria-label={t("To date, inclusive")}

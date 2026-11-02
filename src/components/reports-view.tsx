@@ -31,7 +31,10 @@ export function ReportsView({
     <>
       <PageHeading
         title={t("Reports")}
-        subtitle={t("Sales performance, costs, and cash — with the distinctions that matter.")}
+        subtitle={
+          t("Sales performance, costs, and cash — with the distinctions that matter.") +
+          t(" · Karobar ka hisaab")
+        }
         actions={
           <a
             href={`/api/export?type=report&from=${range.from}&to=${range.to}`}
@@ -69,7 +72,7 @@ export function ReportsView({
           tone="green"
         />
         <Metric
-          label={t("Gross profit")}
+          label={t("Gross profit (munafa before kharchay)")}
           value={
             summary.gross_profit === null ? (
               <span className="metric-unavailable">{t("Unavailable")}</span>
@@ -85,13 +88,13 @@ export function ReportsView({
           icon={TrendingUp}
         />
         <Metric
-          label={t("Operating expenses")}
+          label={t("Operating expenses (dukaan ke kharchay)")}
           value={money(summary.expenses, shop.currency)}
           detail={t("Recorded expenses in this period")}
           icon={Receipt}
         />
         <Metric
-          label={t("Estimated net profit")}
+          label={t("Estimated net profit (andazay ka munafa)")}
           value={
             summary.estimated_net_profit === null ? (
               <span className="metric-unavailable">{t("Unavailable")}</span>
@@ -135,7 +138,7 @@ export function ReportsView({
         <section className="panel">
           <div className="panel-heading">
             <div>
-              <h2>{t("Profit breakdown")}</h2>
+              <h2>{t("Profit breakdown (munafay ki tafseel)")}</h2>
               <p>{t("Recognized sales, not money collected")}</p>
             </div>
           </div>

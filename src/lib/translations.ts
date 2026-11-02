@@ -4,6 +4,33 @@ import type { Locale } from "./preferences";
  * Never apply this catalogue to user-entered product names, notes, or ledger data.
  */
 export const ur = {
+  "Money ledger (paisay ka hisaab)": "پیسوں کا حساب",
+  "Expense ledger (kharchon ka hisaab)": "خرچوں کا حساب",
+  "Net movement (kul paisa andar aur bahar ka farq)": "رقم کی آمد اور خرچ کا فرق",
+  "Profit breakdown (munafay ki tafseel)": "منافع کی تفصیل",
+  "Supplier payment — money out (maal ki adaigi)": "سپلائر کو مال کی ادائیگی — رقم باہر",
+  "Collapse sidebar": "سائیڈ بار چھوٹا کریں",
+  "Expand sidebar": "سائیڈ بار کھولیں",
+  "Outstanding udhaar: unpaid credit sales from all dates.":
+    "بقایا ادھار: ہر تاریخ کی وہ ادھار فروخت جن کی رقم باقی ہے۔",
+  "Show all sales": "تمام فروخت دیکھیں",
+  "All dates · balance due": "تمام تاریخیں · بقایا رقم",
+  "No unpaid credit sales were found. You can view all sales instead.":
+    "کوئی بقایا ادھار نہیں ملا۔ آپ تمام فروخت دیکھ سکتے ہیں۔",
+  " · Aaj ka hisaab": " · آج کا حساب",
+  " · Maal ka hisaab": " · مال کا حساب",
+  " · Bikri aur udhaar": " · فروخت اور ادھار",
+  " · Karobar ka hisaab": " · کاروبار کا حساب",
+  " · Paisay ka hisaab": " · پیسوں کا حساب",
+  " · Dukaan ke kharchay": " · دکان کے خرچے",
+  " · Dukaan ki tafseel": " · دکان کی تفصیل",
+  "Gross profit (munafa before kharchay)": "مجموعی منافع (خرچوں سے پہلے)",
+  "Estimated net profit (andazay ka munafa)": "اندازے کا خالص منافع",
+  "Credit sales (udhaar bikri)": "ادھار فروخت",
+  "Balance due (baqi udhaar)": "بقایا ادھار",
+  "Cashbook (paisay ka hisaab)": "پیسوں کا حساب",
+  "Inventory (maal)": "مال / اسٹاک",
+  "Operating expenses (dukaan ke kharchay)": "دکان کے کاروباری خرچے",
   "Sign in to continue.": "جاری رکھنے کے لیے سائن اِن کریں۔",
   "Authentication is temporarily unavailable.":
     "سائن اِن کا نظام ابھی دستیاب نہیں۔ کچھ دیر بعد کوشش کریں۔",
