@@ -23,3 +23,9 @@ No production deployment or production environment variable was changed. This ca
 ## Release gate
 
 Merge/redeploy the QA fix only after owner approval, then repeat the HTTPS login and server-refresh checks on the canonical live origin. A passing preview is not proof that the still-unchanged live deployment is fixed.
+
+## Development dependency advisory — November 2
+
+A fresh full `npm audit` reported 12 moderate findings arising from one transitive `minimatch` glob-pattern denial-of-service advisory, [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249). `npm audit --omit=dev` reported zero production dependency findings. The affected library is used by development linting, not by the runtime application path established here; this is not evidence of a production compromise.
+
+This review branch pins an npm override to the upstream patched `minimatch` 11.0.1. This overrides dependants' declared 10.x range, so it is a compatibility tradeoff rather than an upstream-supported semver upgrade. Node 24 satisfies the patch's engine requirement. `npm install --ignore-scripts`, full `npm audit` (zero findings), lint, typecheck, all 130 unit/SQL tests, production build, formatting, and 12 fixture browser tests passed with the override. Retest when upgrading ESLint or TypeScript-ESLint, remove the override when upstream has a compatible patched resolution, and keep untrusted glob patterns out of CI. No production deployment has occurred.
