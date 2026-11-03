@@ -2,12 +2,14 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getSupabaseConfig } from "@/lib/env";
+import { authCookiesSecure } from "@/lib/auth-cookie-options";
 
 export async function createServerSupabase() {
   const config = getSupabaseConfig();
   if (!config) throw new Error("Supabase is not configured.");
   const cookieStore = await cookies();
   return createServerClient(config.url, config.key, {
+    cookieOptions: { secure: authCookiesSecure(process.env.APP_URL) },
     cookies: {
       getAll() {
         return cookieStore.getAll();
