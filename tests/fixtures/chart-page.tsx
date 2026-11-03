@@ -21,7 +21,7 @@ const longDates = shortDates.map((p, i) => ({
 }));
 export default function ChartFixture() {
   return (
-    <main style={{ padding: "20px 18px", maxWidth: 1100, margin: "auto" }}>
+    <main style={{ padding: "20px 18px", maxWidth: 600, margin: "auto" }}>
       <h1>Chart fixture</h1>
       <section style={{ border: "1px solid var(--line)", minWidth: 0 }}>
         <h2>Short revenue</h2>
@@ -80,6 +80,14 @@ export default function ChartFixture() {
             { category: "Everyday food", revenue: "-543210987.65" },
           ]}
         />
+      </section>
+      <section style={{ border: "1px solid var(--line)", minWidth: 0 }}>
+        <h2>Empty revenue</h2>
+        <RevenueChart data={[]} currency="USD" />
+      </section>
+      <section style={{ border: "1px solid var(--line)", minWidth: 0 }}>
+        <h2>Empty categories</h2>
+        <CategoryChart data={[]} currency="USD" />
       </section>
       <section style={{ border: "1px solid var(--line)", minWidth: 0 }}>
         <h2>Zero categories</h2>

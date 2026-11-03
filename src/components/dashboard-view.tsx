@@ -123,10 +123,15 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
               {t("Net revenue")}
             </span>
           </div>
-          <div className="dashboard-range">
-            <DateRangeControl range={data.range} />
-          </div>
-          <RevenueChart data={data.period.trend} currency={shop.currency} />
+          <RevenueChart
+            data={data.period.trend}
+            currency={shop.currency}
+            beforeChart={
+              <div className="dashboard-range">
+                <DateRangeControl range={data.range} />
+              </div>
+            }
+          />
           <div className="chart-footer">
             <span>
               {t("Period revenue")}{" "}

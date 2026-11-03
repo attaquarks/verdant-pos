@@ -6,7 +6,11 @@ import type { Locale } from "./preferences";
 export const ur = {
   "No revenue in the first {v0} categories": "پہلی {v0} اقسام کی آمدنی نہیں ہے",
   "Showing first {v0} of {v1} categories": "{v1} میں سے پہلی {v0} اقسام دکھائی گئی ہیں",
-  "Scroll sideways to see the whole chart": "پورا چارٹ دیکھنے کے لیے دائیں یا بائیں سرکائیں",
+  "Chart display": "چارٹ کا منظر",
+  Fit: "پورا",
+  Scroll: "سرکائیں",
+  "Fit chart": "پورا چارٹ دکھائیں",
+  "Scroll chart": "چارٹ سرکائیں",
   "Product photo": "چیز کی تصویر",
   "Save photo": "تصویر محفوظ کریں",
   "Photo saved.": "تصویر محفوظ ہو گئی۔",

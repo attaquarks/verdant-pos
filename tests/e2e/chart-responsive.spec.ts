@@ -28,7 +28,7 @@ async function checkRevenue(page: Page) {
       await expect(wrap).toHaveAttribute("tabindex", "0");
       await expect(wrap).toHaveAttribute("role", "region");
       await expect(wrap).toHaveAccessibleName(/.+/);
-      await expect(wrap.locator("..").locator(".chart-scroll-hint")).toBeVisible();
+      await expect(wrap.locator("..").locator(".chart-scroll-hint")).toHaveCount(0);
       await wrap.focus();
       await page.keyboard.press("ArrowRight");
       await expect.poll(() => wrap.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
@@ -42,6 +42,107 @@ async function checkRevenue(page: Page) {
   }
 }
 
+async function checkControls(page: Page, locale: string, requireOverflow = false) {
+  for (const container of await page.locator(".chart-container:visible").all()) {
+    const fit = container.getByRole("button", {
+      name: locale === "en" ? "Fit chart" : "پورا چارٹ دکھائیں",
+    });
+    const scroll = container.getByRole("button", {
+      name: locale === "en" ? "Scroll chart" : "چارٹ سرکائیں",
+    });
+    const wrap = container.locator(".chart-wrap");
+    const svg = wrap.locator("svg");
+    await expect(fit).toBeVisible();
+    await expect(scroll).toBeVisible();
+    await expect(fit).toHaveAttribute("aria-pressed", "false");
+    await expect(scroll).toHaveAttribute("aria-pressed", "true");
+    const expandedWidth = await svg.evaluate((el) => el.getBoundingClientRect().width);
+    const originalOverflow = await wrap.evaluate((el) => el.scrollWidth - el.clientWidth);
+    if (requireOverflow) expect(originalOverflow).toBeGreaterThan(5);
+    const positions = await container.evaluate((el) => {
+      const controls = el.querySelector(".chart-controls")!.getBoundingClientRect();
+      const buttons = Array.from(el.querySelectorAll(".chart-control"), (button) =>
+        button.getBoundingClientRect(),
+      );
+      const block = el.getBoundingClientRect();
+      const chart = el.querySelector(".chart-wrap")!.getBoundingClientRect();
+      return {
+        controlsRight: controls.right,
+        blockRight: block.right,
+        chartTop: chart.top,
+        bottom: controls.bottom,
+        buttons: buttons.map((r) => ({
+          left: r.left,
+          right: r.right,
+          top: r.top,
+          bottom: r.bottom,
+        })),
+      };
+    });
+    expect(Math.abs(positions.controlsRight - positions.blockRight)).toBeLessThan(1);
+    expect(positions.bottom).toBeLessThanOrEqual(positions.chartTop + 1);
+    expect(positions.buttons[0].right).toBeLessThanOrEqual(positions.buttons[1].left + 1);
+    expect(positions.buttons[1].right).toBeLessThanOrEqual(positions.blockRight + 1);
+    await expect(fit).toHaveAttribute("title", /.+/);
+    await expect(scroll).toHaveAttribute("title", /.+/);
+    await fit.focus();
+    await expect(fit).toBeFocused();
+    expect(await fit.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe("none");
+    await page.keyboard.press("Enter");
+    await expect(fit).toHaveAttribute("aria-pressed", "true");
+    await expect(scroll).toHaveAttribute("aria-pressed", "false");
+    await expect
+      .poll(async () =>
+        wrap.evaluate((el) => {
+          const viewport = el.getBoundingClientRect();
+          const svg = el.querySelector("svg")!;
+          const rect = svg.getBoundingClientRect();
+          const textClipped = Array.from(svg.querySelectorAll("text")).some((text) => {
+            const r = text.getBoundingClientRect();
+            return (
+              r.left < rect.left - 1 ||
+              r.right > rect.right + 1 ||
+              r.top < rect.top - 1 ||
+              r.bottom > rect.bottom + 1
+            );
+          });
+          return (
+            rect.left >= viewport.left - 1 &&
+            rect.right <= viewport.right + 1 &&
+            el.scrollWidth <= el.clientWidth + 1 &&
+            !textClipped
+          );
+        }),
+      )
+      .toBe(true);
+    const fittedWidth = await svg.evaluate((el) => el.getBoundingClientRect().width);
+    if (requireOverflow) expect(fittedWidth).toBeLessThan(expandedWidth - 5);
+    // Scroll restores the intrinsic readable dimensions, even when the viewport is wider.
+    await scroll.focus();
+    await page.keyboard.press("Space");
+    await expect(scroll).toHaveAttribute("aria-pressed", "true");
+    await expect(fit).toHaveAttribute("aria-pressed", "false");
+    await expect
+      .poll(async () =>
+        Math.abs((await svg.evaluate((el) => el.getBoundingClientRect().width)) - expandedWidth),
+      )
+      .toBeLessThan(1);
+    if (requireOverflow) {
+      await expect
+        .poll(() => wrap.evaluate((el) => el.scrollWidth - el.clientWidth))
+        .toBeGreaterThan(5);
+      await wrap.evaluate((el) => {
+        el.scrollLeft = el.scrollWidth;
+      });
+      expect(await wrap.evaluate((el) => el.scrollLeft)).toBeGreaterThan(5);
+    }
+    await expect(container.locator(".chart-scroll-hint")).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
+      true,
+    );
+  }
+}
+
 async function checkCategoryRows(page: Page, mobile: boolean) {
   const containers = page.locator(".category-revenue");
   for (const container of await containers.all()) {
@@ -49,9 +150,10 @@ async function checkCategoryRows(page: Page, mobile: boolean) {
     const list = container.locator(".category-revenue-list");
     if (mobile) {
       await expect(list).toBeVisible();
-      await expect(svg).toBeHidden();
-      await expect(container.getByRole("img")).toHaveCount(0);
-      await expect(container.getByRole("list")).toHaveCount(1);
+      await expect(svg).toBeVisible();
+      await expect(container.getByRole("img")).toHaveCount(1);
+      await expect(container.getByRole("list")).toHaveCount(0);
+      await expect(list).toHaveAttribute("aria-hidden", "true");
     } else {
       await expect(list).toBeHidden();
       await expect(svg).toBeVisible();
@@ -167,6 +269,8 @@ test("responsive fixture: readable exact category rows and accessible revenue", 
         await expect(page.locator("svg.line-chart")).toHaveCount(3);
         await checkRevenue(page);
         await checkCategoryRows(page, width <= 700);
+        await checkControls(page, locale, true);
+        await expect(page.getByText("Scroll sideways to see the whole chart")).toHaveCount(0);
         const long = page.getByRole("heading", { name: "Long categories" }).locator("..");
         const names = [
           "Household cleaning and personal care essentials",
@@ -186,13 +290,30 @@ test("responsive fixture: readable exact category rows and accessible revenue", 
             row.locator(width <= 700 ? ".category-revenue-value" : ".chart-value"),
           ).toHaveText(values[i]);
         }
+        // The visible mobile key and the chart always use the same exact source values.
+        for (let i = 0; i < names.length; i++) {
+          await expect(long.locator(".category-bar-row").nth(i).locator(".chart-label")).toHaveText(
+            names[i],
+          );
+          await expect(long.locator(".category-bar-row").nth(i).locator(".chart-value")).toHaveText(
+            values[i],
+          );
+          await expect(long.locator("svg.bar-chart desc")).toContainText(
+            `${names[i]}: ${values[i]}`,
+          );
+        }
+        for (const heading of ["Empty revenue", "Empty categories"]) {
+          const empty = page.getByRole("heading", { name: heading }).locator("..");
+          await expect(empty.locator(".chart-control")).toHaveCount(0);
+          await expect(empty.locator("svg.line-chart, svg.bar-chart")).toHaveCount(0);
+        }
         await expect(page.locator("svg.line-chart").nth(1).locator("desc")).toContainText(
           "2025-01-01: $1,234,567,890.12",
         );
         const short = page.getByRole("heading", { name: "Short categories" }).locator("..");
         const rowSelector = width <= 700 ? ".category-revenue-row" : ".category-bar-row";
         await expect(short.locator(rowSelector).last()).toContainText("$0.00");
-        if (width > 700) {
+        {
           await expect(short.locator(".chart-bar")).toHaveCount(3);
           const bars = await short.locator("svg.bar-chart").evaluate((el) => {
             const rows = Array.from(el.querySelectorAll(".category-bar-row"));
@@ -265,5 +386,18 @@ test("actual dashboard and reports charts fit their responsive containers", asyn
           await expect(page.locator("svg.line-chart")).toHaveCount(1);
           await checkRevenue(page);
           await checkCategoryRows(page, width <= 700);
+          await checkControls(page, locale);
+          const revenuePanel = page.locator("svg.line-chart").locator("xpath=ancestor::section[1]");
+          await expect(
+            revenuePanel.locator(".panel-heading + .chart-container > .chart-controls"),
+          ).toHaveCount(1);
+          if (path === "/reports") {
+            const categoryPanel = page
+              .locator("svg.bar-chart")
+              .locator("xpath=ancestor::section[1]");
+            await expect(
+              categoryPanel.locator(".panel-heading + .category-revenue .chart-controls"),
+            ).toHaveCount(1);
+          }
         }
 });

@@ -2,7 +2,7 @@
 import { useT, useDateFormatter } from "./preferences";
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { ChartNoAxesCombined } from "lucide-react";
+import { ChartNoAxesCombined, Maximize2, MoveHorizontal } from "lucide-react";
 import { money } from "../lib/money";
 
 import { EmptyState } from "./ui";
@@ -14,29 +14,60 @@ const textSpace = (text: string) => text.length * 14;
 const moneySpace = (text: string) =>
   Array.from(text).reduce((width, char) => width + (/[0-9.,$+\- ]/.test(char) ? 9 : 14), 0);
 
-function ChartViewport({ children, label }: { children: ReactNode; label: string }) {
+function ChartViewport({
+  children,
+  label,
+  beforeChart,
+}: {
+  children: ReactNode;
+  label: string;
+  beforeChart?: ReactNode;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [scrollable, setScrollable] = useState(false);
+  const [mode, setMode] = useState<"fit" | "scroll">("scroll");
   const t = useT();
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
+    if (mode === "fit") element.scrollLeft = 0;
     const update = () => setScrollable(element.scrollWidth > element.clientWidth + 1);
     const observer = new ResizeObserver(update);
     observer.observe(element);
     if (element.firstElementChild) observer.observe(element.firstElementChild);
     update();
     return () => observer.disconnect();
-  }, []);
-  const hint = t("Scroll sideways to see the whole chart");
+  }, [mode]);
   return (
     <div className="chart-container">
-      {scrollable && <p className="chart-scroll-hint">↔ {hint}</p>}
+      <div className="chart-controls" role="group" aria-label={t("Chart display")}>
+        <button
+          type="button"
+          className="chart-control"
+          aria-pressed={mode === "fit"}
+          aria-label={t("Fit chart")}
+          title={t("Fit chart")}
+          onClick={() => setMode("fit")}
+        >
+          <Maximize2 size={13} aria-hidden="true" /> {t("Fit")}
+        </button>
+        <button
+          type="button"
+          className="chart-control"
+          aria-pressed={mode === "scroll"}
+          aria-label={t("Scroll chart")}
+          title={t("Scroll chart")}
+          onClick={() => setMode("scroll")}
+        >
+          <MoveHorizontal size={13} aria-hidden="true" /> {t("Scroll")}
+        </button>
+      </div>
+      {beforeChart}
       <div
         ref={ref}
-        className="chart-wrap"
+        className={`chart-wrap chart-wrap--${mode}`}
         role={scrollable ? "region" : undefined}
-        aria-label={scrollable ? `${label}. ${hint}` : undefined}
+        aria-label={scrollable ? label : undefined}
         tabIndex={scrollable ? 0 : undefined}
       >
         {children}
@@ -49,15 +80,22 @@ function ChartViewport({ children, label }: { children: ReactNode; label: string
 export function RevenueChart({
   data,
   currency,
+  beforeChart,
 }: {
   data: { date: string; revenue: string }[];
   currency: string;
+  beforeChart?: ReactNode;
 }) {
   const formatDate = useDateFormatter();
   const t = useT();
   const id = useId();
   if (!data.length || data.every((point) => Number(point.revenue) === 0))
-    return <EmptyState compact icon={ChartNoAxesCombined} title={t("No revenue in this period")} />;
+    return (
+      <>
+        {beforeChart}
+        <EmptyState compact icon={ChartNoAxesCombined} title={t("No revenue in this period")} />
+      </>
+    );
   const height = 240,
     right = 24,
     top = 22,
@@ -92,7 +130,10 @@ export function RevenueChart({
     ]),
   );
   return (
-    <ChartViewport label={t("Net revenue over time, {v0}", { v0: currency })}>
+    <ChartViewport
+      label={t("Net revenue over time, {v0}", { v0: currency })}
+      beforeChart={beforeChart}
+    >
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="line-chart"
@@ -205,87 +246,82 @@ export function CategoryChart({
   const x = (value: number) => left + ((value - min) / span) * plotWidth;
   return (
     <div className="category-revenue">
+      <ChartViewport label={t("Net revenue by category, {v0}", { v0: currency })}>
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          style={{ width }}
+          role="img"
+          className="bar-chart"
+          aria-labelledby={`${id}-title ${id}-desc`}
+        >
+          <title id={`${id}-title`}>{t("Net revenue by category, {v0}", { v0: currency })}</title>
+          <desc id={`${id}-desc`}>
+            {rows.map((row) => `${row.category}: ${money(row.revenue, currency)}`).join("; ")}
+          </desc>
+          {ticks.map((value, index) => (
+            <g key={index}>
+              <line
+                x1={x(value)}
+                y1={top}
+                x2={x(value)}
+                y2={height - bottom}
+                className="chart-grid"
+              />
+              <text
+                x={x(value)}
+                y={height - 10}
+                textAnchor={index === 0 ? "start" : index === 2 ? "end" : "middle"}
+                className="chart-axis"
+              >
+                {money(value.toFixed(2), currency)}
+              </text>
+            </g>
+          ))}
+          {rows.map((row, index) => {
+            const value = Number(row.revenue);
+            return (
+              <g key={index} className="category-bar-row">
+                <text
+                  x={left - negativeValueWidth - 14}
+                  y={top + index * barHeight + 19}
+                  textAnchor="end"
+                  className="chart-label"
+                >
+                  {row.category}
+                </text>
+                {value !== 0 && (
+                  <rect
+                    x={Math.min(x(0), x(value))}
+                    y={top + index * barHeight + 6}
+                    width={Math.abs(x(value) - x(0))}
+                    height={18}
+                    rx="3"
+                    className={value < 0 ? "chart-bar chart-bar--negative" : "chart-bar"}
+                  >
+                    <title>
+                      {t("{v0}: {v1}", { v0: row.category, v1: money(row.revenue, currency) })}
+                    </title>
+                  </rect>
+                )}
+                <text
+                  x={value >= 0 ? x(value) + 8 : x(value) - 8}
+                  y={top + index * barHeight + 19}
+                  textAnchor={value >= 0 ? "start" : "end"}
+                  className="chart-value"
+                >
+                  {money(row.revenue, currency)}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </ChartViewport>
       {limited && (
         <p className="category-limit">
           {t("Showing first {v0} of {v1} categories", { v0: rows.length, v1: data.length })}
         </p>
       )}
-      <div className="category-revenue-desktop">
-        <ChartViewport label={t("Net revenue by category, {v0}", { v0: currency })}>
-          <svg
-            viewBox={`0 0 ${width} ${height}`}
-            style={{ width }}
-            role="img"
-            className="bar-chart"
-            aria-labelledby={`${id}-title ${id}-desc`}
-          >
-            <title id={`${id}-title`}>{t("Net revenue by category, {v0}", { v0: currency })}</title>
-            <desc id={`${id}-desc`}>
-              {rows.map((row) => `${row.category}: ${money(row.revenue, currency)}`).join("; ")}
-            </desc>
-            {ticks.map((value, index) => (
-              <g key={index}>
-                <line
-                  x1={x(value)}
-                  y1={top}
-                  x2={x(value)}
-                  y2={height - bottom}
-                  className="chart-grid"
-                />
-                <text
-                  x={x(value)}
-                  y={height - 10}
-                  textAnchor={index === 0 ? "start" : index === 2 ? "end" : "middle"}
-                  className="chart-axis"
-                >
-                  {money(value.toFixed(2), currency)}
-                </text>
-              </g>
-            ))}
-            {rows.map((row, index) => {
-              const value = Number(row.revenue);
-              return (
-                <g key={index} className="category-bar-row">
-                  <text
-                    x={left - negativeValueWidth - 14}
-                    y={top + index * barHeight + 19}
-                    textAnchor="end"
-                    className="chart-label"
-                  >
-                    {row.category}
-                  </text>
-                  {value !== 0 && (
-                    <rect
-                      x={Math.min(x(0), x(value))}
-                      y={top + index * barHeight + 6}
-                      width={Math.abs(x(value) - x(0))}
-                      height={18}
-                      rx="3"
-                      className={value < 0 ? "chart-bar chart-bar--negative" : "chart-bar"}
-                    >
-                      <title>
-                        {t("{v0}: {v1}", { v0: row.category, v1: money(row.revenue, currency) })}
-                      </title>
-                    </rect>
-                  )}
-                  <text
-                    x={value >= 0 ? x(value) + 8 : x(value) - 8}
-                    y={top + index * barHeight + 19}
-                    textAnchor={value >= 0 ? "start" : "end"}
-                    className="chart-value"
-                  >
-                    {money(row.revenue, currency)}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-        </ChartViewport>
-      </div>
-      <ul
-        className="category-revenue-list"
-        aria-label={t("Net revenue by category, {v0}", { v0: currency })}
-      >
+      <ul className="category-revenue-list" aria-hidden="true">
         {rows.map((row, index) => (
           <li className="category-revenue-row" key={index}>
             <bdi className="category-revenue-name" dir="auto">
