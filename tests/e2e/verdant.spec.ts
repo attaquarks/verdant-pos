@@ -170,11 +170,16 @@ test("inventory renders real seeded stock, category embedding, filters, search, 
     name: /^Fixture Rice/,
   });
   await riceButton.click();
+  const card = page.getByRole("dialog", { name: "Fixture Rice", exact: true });
+  await card.getByRole("button", { name: "Stock movements", exact: true }).click();
   const movements = page.getByRole("dialog", { name: "Stock movements", exact: true });
   await expect(movements.getByText("sale", { exact: true })).toBeVisible();
   await expect(movements.getByText("opening", { exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(movements).toHaveCount(0);
+  await expect(card.getByRole("button", { name: "Stock movements", exact: true })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(card).toHaveCount(0);
   await expect(riceButton).toBeFocused();
 });
 
@@ -392,8 +397,8 @@ test("all seven destinations navigate and reports show real SQL aggregates", asy
     ["/inventory", "Inventory", "Inventory"],
     ["/sales", "Sales", "Sales"],
     ["/reports", "Reports", "Reports"],
-    ["/cashbook", "Cashbook", "Cashbook"],
-    ["/expenses", "Expenses", "Expenses"],
+    ["/cashbook", "Cashbook", "Cashbook/Khata"],
+    ["/expenses", "Expenses", "Expenses/Kharchay"],
     ["/settings", "Settings", "Settings"],
     ["/", "Dashboard", "Dashboard"],
   ]) {

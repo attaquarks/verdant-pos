@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:chart-responsive": "sh scripts/test-chart-responsive.sh",
     "test:concurrency": "node --import tsx scripts/test-concurrency.ts",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "format": "prettier --write .",
@@ -22,6 +23,7 @@
     "test:cloud": "playwright test --config=playwright.cloud.config.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1161.0",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.118.0",
     "date-fns": "4.4.0",
@@ -32,6 +34,7 @@
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "server-only": "0.0.1",
+    "sharp": "0.35.5",
     "zod": "4.6.7"
   },
   "devDependencies": {

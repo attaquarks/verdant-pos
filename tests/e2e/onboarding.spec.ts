@@ -41,9 +41,7 @@ test("a new authenticated owner configures the shop timezone and completes the f
     page.locator(".metric").filter({ hasText: "Units sold today" }).locator(".metric-value"),
   ).toHaveText("0");
   await page.goto(`${APP_ORIGIN}/inventory`);
-  await expect(
-    page.getByRole("heading", { name: "A well-stocked shop starts here", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No products yet", exact: true })).toBeVisible();
   await expect(page.getByText("Fixture Rice", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "New category", exact: true }).click();
   const category = page.getByRole("dialog", { name: "New category", exact: true });

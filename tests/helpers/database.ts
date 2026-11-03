@@ -31,6 +31,24 @@ export async function createDatabase(): Promise<PGlite> {
     $$;
     grant usage on schema auth to anon, authenticated, service_role;
     grant execute on function auth.uid() to anon, authenticated, service_role;
+    -- Minimal managed Storage test double: PostgreSQL policies are real, byte
+    -- handling and Storage API enforcement are exercised separately at the HTTP edge.
+    create schema storage;
+    create function storage.allow_any_operation(expected text[]) returns boolean language sql stable as $$
+      select exists (select 1 from unnest(expected) e
+        where regexp_replace(current_setting('storage.operation',true),'^storage\\.','') = regexp_replace(e,'^storage\\.',''))
+    $$;
+    create table storage.buckets (
+      id text primary key, name text not null, public boolean not null default false,
+      file_size_limit bigint, allowed_mime_types text[]
+    );
+    create table storage.objects (
+      id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets(id),
+      name text not null, owner_id text, metadata jsonb, unique(bucket_id,name)
+    );
+    alter table storage.objects enable row level security;
+    grant usage on schema storage to anon, authenticated;
+    grant select,insert,update,delete on storage.objects to anon,authenticated;
   `);
   const migrations = fileURLToPath(new URL("../../supabase/migrations/", import.meta.url));
   const files = (await readdir(migrations)).filter((name) => name.endsWith(".sql")).sort();
@@ -45,12 +63,15 @@ export async function asUser<T extends Record<string, unknown> = Record<string, 
   sql: string,
   params: unknown[] = [],
   role: "authenticated" | "anon" = "authenticated",
+  storageOperation?: string,
 ): Promise<Results<T>> {
   return db.transaction(async (tx) => {
     await tx.query(
       "select set_config('request.jwt.claim.sub',$1,true), set_config('request.jwt.claims',$2,true)",
       [userId ?? "", JSON.stringify(userId ? { sub: userId, role } : { role })],
     );
+    if (storageOperation)
+      await tx.query("select set_config('storage.operation',$1,true)", [storageOperation]);
     await tx.exec(`set local role ${role}`);
     return tx.query<T>(sql, params);
   });

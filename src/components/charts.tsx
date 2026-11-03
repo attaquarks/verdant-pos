@@ -1,32 +1,102 @@
 "use client";
+import { useT, useDateFormatter } from "./preferences";
 
-import { useId } from "react";
-import { ChartNoAxesCombined } from "lucide-react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { ChartNoAxesCombined, Maximize2, MoveHorizontal } from "lucide-react";
 import { money } from "../lib/money";
-import { formatDate } from "../lib/dates";
+
 import { EmptyState } from "./ui";
+
+/** Reserve space conservatively for unmeasured text, including wide and RTL glyphs.
+ * This keeps full labels in the SVG without relying on client font-loading timing. */
+const textSpace = (text: string) => text.length * 14;
+// Numerals and punctuation in currency labels are narrower than arbitrary names.
+const moneySpace = (text: string) =>
+  Array.from(text).reduce((width, char) => width + (/[0-9.,$+\- ]/.test(char) ? 9 : 14), 0);
+
+function ChartViewport({
+  children,
+  label,
+  beforeChart,
+}: {
+  children: ReactNode;
+  label: string;
+  beforeChart?: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [scrollable, setScrollable] = useState(false);
+  const [mode, setMode] = useState<"fit" | "scroll">("scroll");
+  const t = useT();
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    if (mode === "fit") element.scrollLeft = 0;
+    const update = () => setScrollable(element.scrollWidth > element.clientWidth + 1);
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    if (element.firstElementChild) observer.observe(element.firstElementChild);
+    update();
+    return () => observer.disconnect();
+  }, [mode]);
+  return (
+    <div className="chart-container">
+      <div className="chart-controls" role="group" aria-label={t("Chart display")}>
+        <button
+          type="button"
+          className="chart-control"
+          aria-pressed={mode === "fit"}
+          aria-label={t("Fit chart")}
+          title={t("Fit chart")}
+          onClick={() => setMode("fit")}
+        >
+          <Maximize2 size={13} aria-hidden="true" /> {t("Fit")}
+        </button>
+        <button
+          type="button"
+          className="chart-control"
+          aria-pressed={mode === "scroll"}
+          aria-label={t("Scroll chart")}
+          title={t("Scroll chart")}
+          onClick={() => setMode("scroll")}
+        >
+          <MoveHorizontal size={13} aria-hidden="true" /> {t("Scroll")}
+        </button>
+      </div>
+      {beforeChart}
+      <div
+        ref={ref}
+        className={`chart-wrap chart-wrap--${mode}`}
+        role={scrollable ? "region" : undefined}
+        aria-label={scrollable ? label : undefined}
+        tabIndex={scrollable ? 0 : undefined}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 /** Number conversion below is exclusively for SVG coordinates, never ledger arithmetic. */
 export function RevenueChart({
   data,
   currency,
+  beforeChart,
 }: {
   data: { date: string; revenue: string }[];
   currency: string;
+  beforeChart?: ReactNode;
 }) {
+  const formatDate = useDateFormatter();
+  const t = useT();
   const id = useId();
   if (!data.length || data.every((point) => Number(point.revenue) === 0))
     return (
-      <EmptyState
-        compact
-        icon={ChartNoAxesCombined}
-        title="No revenue in this period"
-        description="Posted sales and return adjustments will appear here."
-      />
+      <>
+        {beforeChart}
+        <EmptyState compact icon={ChartNoAxesCombined} title={t("No revenue in this period")} />
+      </>
     );
-  const width = 760,
-    height = 240,
-    left = 96,
+  const height = 240,
     right = 24,
     top = 22,
     bottom = 42;
@@ -34,6 +104,19 @@ export function RevenueChart({
   const minimum = Math.min(0, ...values),
     maximum = Math.max(0, ...values);
   const span = maximum - minimum || 1;
+  const ticks = [0, 1, 2, 3, 4].map((tick) => minimum + (span * tick) / 4);
+  const left = Math.max(
+    96,
+    ...ticks.map((value) => moneySpace(money(value.toFixed(2), currency)) + 20),
+  );
+  const dateLabel = (date: string) =>
+    formatDate(`${date}T12:00:00Z`, "UTC", { month: "short", day: "numeric" });
+  // With six observations the closest chosen dates are one fifth of the plot apart.
+  const plotWidth = Math.max(
+    440,
+    5 * (Math.max(...data.map((p) => textSpace(dateLabel(p.date)))) + 12),
+  );
+  const width = left + plotWidth + right;
   const x = (index: number) =>
     left + (data.length === 1 ? 0.5 : index / (data.length - 1)) * (width - left - right);
   const y = (value: number) => top + ((maximum - value) / span) * (height - top - bottom);
@@ -46,20 +129,22 @@ export function RevenueChart({
       data.length - 1,
     ]),
   );
-  const dateLabel = (date: string) =>
-    formatDate(`${date}T12:00:00Z`, "UTC", { month: "short", day: "numeric" });
   return (
-    <div className="chart-wrap">
+    <ChartViewport
+      label={t("Net revenue over time, {v0}", { v0: currency })}
+      beforeChart={beforeChart}
+    >
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="line-chart"
+        style={{ width }}
         role="img"
         aria-labelledby={`${id}-title ${id}-desc`}
       >
-        <title id={`${id}-title`}>{`Net revenue over time, ${currency}`}</title>
+        <title id={`${id}-title`}>{t("Net revenue over time, {v0}", { v0: currency })}</title>
         <desc id={`${id}-desc`}>
-          {data.map((point) => `${point.date}: ${money(point.revenue, currency)}`).join("; ")}.
-          Returns reduce revenue on the day recorded.
+          {data.map((point) => `${point.date}: ${money(point.revenue, currency)}`).join("; ")}
+          {t(". Returns reduce revenue on the day recorded.")}
         </desc>
         {[0, 1, 2, 3, 4].map((tick) => {
           const value = minimum + (span * tick) / 4;
@@ -97,7 +182,9 @@ export function RevenueChart({
             r={data.length > 45 ? 2 : 3.5}
             className="chart-point"
           >
-            <title>{`${dateLabel(point.date)} · ${money(point.revenue, currency)}`}</title>
+            <title>
+              {t("{v0} · {v1}", { v0: dateLabel(point.date), v1: money(point.revenue, currency) })}
+            </title>
           </circle>
         ))}
         {labelIndexes.map((index) => (
@@ -112,7 +199,7 @@ export function RevenueChart({
           </text>
         ))}
       </svg>
-    </div>
+    </ChartViewport>
   );
 }
 
@@ -123,44 +210,56 @@ export function CategoryChart({
   data: { category: string; revenue: string }[];
   currency: string;
 }) {
+  const t = useT();
   const id = useId();
   const rows = data.slice(0, 6);
-  if (!rows.length || rows.every((row) => Number(row.revenue) === 0))
-    return (
-      <EmptyState
-        compact
-        icon={ChartNoAxesCombined}
-        title="No category revenue yet"
-        description="Category performance will follow your recorded sales."
-      />
-    );
-  const width = 680,
-    left = 148,
-    right = 84,
-    top = 8,
+  const limited = data.length > rows.length;
+  if (!rows.length)
+    return <EmptyState compact icon={ChartNoAxesCombined} title={t("No category revenue yet")} />;
+
+  // Reserve room for complete names and exact values, even when values are negative.
+  // Number is used only for plot coordinates; displayed amounts come from the original strings.
+  const min = Math.min(0, ...rows.map((row) => Number(row.revenue)));
+  const max = Math.max(0, ...rows.map((row) => Number(row.revenue)));
+  const range = max - min;
+  const span = range || 1;
+  const ticks = range ? [min, min + span / 2, max] : [0];
+  const nameWidth = Math.max(...rows.map((row) => textSpace(row.category)));
+  const valueWidth = Math.max(...rows.map((row) => moneySpace(money(row.revenue, currency))));
+  const negativeValueWidth = Math.max(
+    0,
+    ...rows
+      .filter((row) => Number(row.revenue) < 0)
+      .map((row) => moneySpace(money(row.revenue, currency))),
+  );
+  const tickWidth = Math.max(
+    ...ticks.map((value) => moneySpace(money(value.toFixed(2), currency))),
+  );
+  const left = Math.max(148, nameWidth + negativeValueWidth + 30, tickWidth / 2 + 8);
+  const right = Math.max(84, valueWidth + 16, tickWidth / 2 + 8);
+  const plotWidth = Math.max(448, tickWidth * 2 + 24);
+  const width = left + plotWidth + right;
+  const top = 8,
     barHeight = 34,
     bottom = 34;
   const height = top + rows.length * barHeight + bottom;
-  const min = Math.min(0, ...rows.map((row) => Number(row.revenue)));
-  const max = Math.max(0, ...rows.map((row) => Number(row.revenue)));
-  const span = max - min || 1;
-  const x = (value: number) => left + ((value - min) / span) * (width - left - right);
+  const x = (value: number) => left + ((value - min) / span) * plotWidth;
   return (
-    <div className="chart-wrap">
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        role="img"
-        className="bar-chart"
-        aria-labelledby={`${id}-title ${id}-desc`}
-      >
-        <title id={`${id}-title`}>{`Net revenue by category, ${currency}`}</title>
-        <desc id={`${id}-desc`}>
-          {rows.map((row) => `${row.category}: ${money(row.revenue, currency)}`).join("; ")}
-        </desc>
-        {[0, 0.5, 1].map((fraction) => {
-          const value = min + span * fraction;
-          return (
-            <g key={fraction}>
+    <div className="category-revenue">
+      <ChartViewport label={t("Net revenue by category, {v0}", { v0: currency })}>
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          style={{ width }}
+          role="img"
+          className="bar-chart"
+          aria-labelledby={`${id}-title ${id}-desc`}
+        >
+          <title id={`${id}-title`}>{t("Net revenue by category, {v0}", { v0: currency })}</title>
+          <desc id={`${id}-desc`}>
+            {rows.map((row) => `${row.category}: ${money(row.revenue, currency)}`).join("; ")}
+          </desc>
+          {ticks.map((value, index) => (
+            <g key={index}>
               <line
                 x1={x(value)}
                 y1={top}
@@ -171,48 +270,69 @@ export function CategoryChart({
               <text
                 x={x(value)}
                 y={height - 10}
-                textAnchor={fraction === 0 ? "start" : fraction === 1 ? "end" : "middle"}
+                textAnchor={index === 0 ? "start" : index === 2 ? "end" : "middle"}
                 className="chart-axis"
               >
                 {money(value.toFixed(2), currency)}
               </text>
             </g>
-          );
-        })}
-        {rows.map((row, index) => {
-          const value = Number(row.revenue);
-          return (
-            <g key={row.category}>
-              <text
-                x={left - 14}
-                y={top + index * barHeight + 19}
-                textAnchor="end"
-                className="chart-label"
-              >
-                {row.category.length > 20 ? `${row.category.slice(0, 19)}…` : row.category}
-              </text>
-              <rect
-                x={Math.min(x(0), x(value))}
-                y={top + index * barHeight + 6}
-                width={Math.max(1, Math.abs(x(value) - x(0)))}
-                height={18}
-                rx="3"
-                className={value < 0 ? "chart-bar chart-bar--negative" : "chart-bar"}
-              >
-                <title>{`${row.category}: ${money(row.revenue, currency)}`}</title>
-              </rect>
-              <text
-                x={value >= 0 ? x(value) + 8 : x(value) - 8}
-                y={top + index * barHeight + 19}
-                textAnchor={value >= 0 ? "start" : "end"}
-                className="chart-value"
-              >
-                {money(row.revenue, currency)}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+          ))}
+          {rows.map((row, index) => {
+            const value = Number(row.revenue);
+            return (
+              <g key={index} className="category-bar-row">
+                <text
+                  x={left - negativeValueWidth - 14}
+                  y={top + index * barHeight + 19}
+                  textAnchor="end"
+                  className="chart-label"
+                >
+                  {row.category}
+                </text>
+                {value !== 0 && (
+                  <rect
+                    x={Math.min(x(0), x(value))}
+                    y={top + index * barHeight + 6}
+                    width={Math.abs(x(value) - x(0))}
+                    height={18}
+                    rx="3"
+                    className={value < 0 ? "chart-bar chart-bar--negative" : "chart-bar"}
+                  >
+                    <title>
+                      {t("{v0}: {v1}", { v0: row.category, v1: money(row.revenue, currency) })}
+                    </title>
+                  </rect>
+                )}
+                <text
+                  x={value >= 0 ? x(value) + 8 : x(value) - 8}
+                  y={top + index * barHeight + 19}
+                  textAnchor={value >= 0 ? "start" : "end"}
+                  className="chart-value"
+                >
+                  {money(row.revenue, currency)}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </ChartViewport>
+      {limited && (
+        <p className="category-limit">
+          {t("Showing first {v0} of {v1} categories", { v0: rows.length, v1: data.length })}
+        </p>
+      )}
+      <ul className="category-revenue-list" aria-hidden="true">
+        {rows.map((row, index) => (
+          <li className="category-revenue-row" key={index}>
+            <bdi className="category-revenue-name" dir="auto">
+              {row.category}
+            </bdi>
+            <bdi className="category-revenue-value" dir="ltr">
+              {money(row.revenue, currency)}
+            </bdi>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

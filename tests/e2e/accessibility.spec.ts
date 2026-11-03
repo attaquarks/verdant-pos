@@ -47,16 +47,16 @@ test("WCAG checks and desktop/mobile workflow screenshots use only isolated SQL 
     ["/inventory", "Inventory"],
     ["/reports", "Reports"],
     ["/sales", "Sales"],
-    ["/cashbook", "Cashbook"],
-    ["/expenses", "Expenses"],
+    ["/cashbook", "Cashbook/Khata"],
+    ["/expenses", "Expenses/Kharchay"],
     ["/settings", "Settings"],
   ]) {
     await page.goto(`${APP_ORIGIN}${path}`);
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
     await audit(title);
-    if (["Dashboard", "Inventory", "Reports"].includes(title))
+    if (["/", "/inventory", "/reports"].includes(path))
       await page.screenshot({
-        path: `artifacts/screenshots/${title.toLowerCase()}.png`,
+        path: `artifacts/screenshots/${path === "/" ? "dashboard" : path.slice(1)}.png`,
         fullPage: true,
         animations: "disabled",
       });

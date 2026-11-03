@@ -1,4 +1,6 @@
 "use client";
+import { LocalizedForm, PreferenceControls, useT } from "./preferences";
+import { message as sourceMessage } from "@/lib/translations";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -33,7 +35,7 @@ const navigation = [
   { href: "/cashbook", label: "Cashbook", icon: Wallet },
   { href: "/expenses", label: "Expenses", icon: Receipt },
   { href: "/settings", label: "Settings", icon: Settings },
-];
+] as const;
 
 export function AppShell({
   shop,
@@ -46,10 +48,12 @@ export function AppShell({
   lowStockCount: number;
   children: ReactNode;
 }) {
+  const t = useT();
   const pathname = usePathname();
   const currentTitle = navigation.find((item) => item.href === pathname)?.label ?? "Workspace";
   const router = useRouter();
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [saleOpen, setSaleOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,12 +85,14 @@ export function AppShell({
       router.replace("/login");
       router.refresh();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Couldn’t sign out. Try again.");
+      setError(
+        caught instanceof Error ? caught.message : sourceMessage("Couldn’t sign out. Try again."),
+      );
       setSigningOut(false);
     }
   }
   const nav = (
-    <nav className="main-nav" aria-label="Main navigation">
+    <nav className="main-nav" aria-label={t("Main navigation")}>
       {navigation.map(({ href, label, icon: Icon }) => {
         const active =
           pathname === href ||
@@ -97,13 +103,17 @@ export function AppShell({
             key={href}
             href={href}
             className={`nav-link${active ? " is-active" : ""}`}
+            title={t(label)}
             aria-current={active ? "page" : undefined}
             onClick={() => setMobileMenu(false)}
           >
             <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
-            <span>{label}</span>
+            <span>{t(label)}</span>
             {href === "/inventory" && lowStockCount > 0 && (
-              <span className="nav-count" aria-label={`${lowStockCount} low-stock products`}>
+              <span
+                className="nav-count"
+                aria-label={t("{v0} low-stock products", { v0: lowStockCount })}
+              >
                 {lowStockCount}
               </span>
             )}
@@ -113,81 +123,89 @@ export function AppShell({
     </nav>
   );
   return (
-    <div className="app-shell">
+    <div className={`app-shell${collapsed ? " sidebar-collapsed" : ""}`}>
       <a className="skip-link" href="#main-content">
-        Skip to main content
+        {t("Skip to main content")}
       </a>
       <aside className="sidebar">
-        <Link href="/" className="brand-link" aria-label="Verdant POS dashboard">
+        <button
+          type="button"
+          className="brand-link sidebar-toggle"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-expanded={!collapsed}
+          aria-label={`${t(collapsed ? "Expand sidebar" : "Collapse sidebar")} — verdant POS`}
+          title={t(collapsed ? "Expand sidebar" : "Collapse sidebar")}
+        >
           <Brand />
-        </Link>
+        </button>
         <div className="shop-switcher">
           <span className="shop-monogram" aria-hidden="true">
             {shop.name.trim().charAt(0).toUpperCase()}
           </span>
           <div>
-            <strong>{shop.name}</strong>
-            <span>Shop workspace</span>
+            <strong dir="auto">{shop.name}</strong>
+            <span>{t("Shop workspace")}</span>
           </div>
         </div>
-        <div className="nav-eyebrow">WORKSPACE</div>
+        <div className="nav-eyebrow">{t("WORKSPACE")}</div>
         {nav}
         <div className="sidebar-bottom">
           <div className="sidebar-note">
             <BookOpen size={16} aria-hidden="true" />
-            <span>A clear view of your business.</span>
+            <span>{t("A clear view of your business.")}</span>
           </div>
           <Link href="/settings#data" className="help-link">
             <CircleHelp size={16} />
-            Data & support
+            {t("Data & support")}
           </Link>
-          <span className="sidebar-version">Verdant POS · Retail essentials</span>
+          <span className="sidebar-version">{t("Verdant POS · Retail essentials")}</span>
         </div>
       </aside>
       <div className="workspace">
         <header className="topbar">
           <div className="topbar-left">
             <IconButton
-              label="Open navigation"
+              label={t("Open navigation")}
               className="mobile-menu-button"
               onClick={() => setMobileMenu(true)}
             >
               <Menu size={21} />
             </IconButton>
-            <span className="topbar-title">{currentTitle}</span>
-            <form action="/inventory" method="get" className="global-search" role="search">
+            <span className="topbar-title">{t(currentTitle)}</span>
+            <LocalizedForm action="/inventory" method="get" className="global-search" role="search">
               <Search size={17} aria-hidden="true" />
               <label className="sr-only" htmlFor="workspace-search">
-                Search inventory
+                {t("Search inventory")}
               </label>
               <input
                 id="workspace-search"
                 type="search"
                 name="q"
-                placeholder="Search your inventory…"
+                placeholder={t("Search your inventory…")}
                 autoComplete="off"
               />
               <kbd aria-hidden="true">↵</kbd>
-            </form>
+            </LocalizedForm>
           </div>
           <div className="topbar-actions">
+            <PreferenceControls />
             <span className="currency-tag">{shop.currency}</span>
             <Link
               href="/inventory?stock=alerts&sort=stock&active=active"
               className="icon-button notification-button"
               aria-label={
                 lowStockCount
-                  ? `${lowStockCount} low-stock products. View inventory alerts`
-                  : "View inventory alerts"
+                  ? t("{v0} low-stock products. View inventory alerts", { v0: lowStockCount })
+                  : t("View inventory alerts")
               }
-              title="Low-stock alerts"
+              title={t("Low-stock alerts")}
             >
               <Bell size={19} />
               {lowStockCount > 0 && <span className="notification-dot" />}
             </Link>
             <span className="topbar-divider" />
             <ActionMenu
-              label={`Account menu for ${userEmail}`}
+              label={t("Account menu for {v0}", { v0: userEmail })}
               items={[
                 { label: "Shop settings", icon: Settings, href: "/settings" },
                 {
@@ -201,7 +219,9 @@ export function AppShell({
               <span className="avatar" aria-hidden="true">
                 <UserRound size={15} />
               </span>
-              <span className="account-name">{userEmail}</span>
+              <span className="account-name" dir="ltr">
+                {userEmail}
+              </span>
             </ActionMenu>
           </div>
         </header>
@@ -223,7 +243,7 @@ export function AppShell({
       </div>
       {mobileMenu && (
         <Modal
-          title="Your workspace"
+          title={t("Your workspace")}
           onClose={() => setMobileMenu(false)}
           className="mobile-nav-dialog"
         >
@@ -240,20 +260,22 @@ export function AppShell({
             }}
           >
             <Plus size={17} />
-            New sale
+            {t("New sale")}
           </Button>
-          <p className="muted small-text">Signed in as {userEmail}</p>
+          <p className="muted small-text">
+            {t("Signed in as")} {userEmail}
+          </p>
         </Modal>
       )}
       <button
         type="button"
         className="quick-sale-fab"
         onClick={() => setSaleOpen(true)}
-        title="New sale (Alt+N)"
+        title={t("New sale (Alt+N)")}
       >
         <Plus size={17} />
-        <span>New sale</span>
-        <kbd>Alt N</kbd>
+        <span>{t("New sale")}</span>
+        <kbd>{t("Alt N")}</kbd>
       </button>
       {saleOpen && (
         <SaleDialog
