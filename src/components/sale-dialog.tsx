@@ -400,10 +400,10 @@ export function SaleDialog({
                           type="button"
                           onClick={() => addProduct(product)}
                           disabled={unavailable}
-                          aria-label={t(added ? "Focus quantity for {v0}" : "Add {v0}", {
-                            v0: product.name,
-                          })}
                         >
+                          <span className="sr-only">
+                            {added ? t("Focus quantity for") : t("Add")}
+                          </span>
                           <span className="search-product-icon">
                             <ShoppingBag size={16} />
                           </span>
