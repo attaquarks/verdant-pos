@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:chart-responsive": "sh scripts/test-chart-responsive.sh",
     "test:concurrency": "node --import tsx scripts/test-concurrency.ts",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "format": "prettier --write .",

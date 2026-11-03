@@ -4957,3 +4957,115 @@ html[dir="rtl"] :is(svg.lucide-arrow-left, svg.lucide-arrow-right) {
     height: 180px;
   }
 }
+
+/* Charts retain their SVG pixel size instead of shrinking labels on small screens. */
+.chart-container {
+  min-width: 0;
+  max-width: 100%;
+}
+.chart-scroll-hint {
+  margin: 8px 18px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.chart-wrap {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  direction: ltr;
+  justify-content: flex-start;
+  scrollbar-width: thin;
+}
+.chart-wrap:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+.line-chart,
+.bar-chart {
+  flex: none;
+  max-width: none;
+  max-height: none;
+  overflow: hidden;
+}
+.chart-axis,
+.chart-label,
+.chart-value {
+  font-size: 12px;
+}
+/* User-entered category names may be Urdu even in the English interface. */
+html[lang="en"] .chart-label {
+  font-family:
+    "Inter",
+    "Aptos",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Verdant Urdu",
+    sans-serif;
+}
+
+/* The original desktop bars remain; compact screens use readable rows. */
+.category-revenue {
+  min-width: 0;
+  padding: 0;
+}
+.category-limit {
+  margin: 8px 18px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.category-revenue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.category-revenue-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.category-revenue-row:last-child {
+  border-bottom: 0;
+}
+.category-revenue-name {
+  flex: 1 1 140px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-secondary);
+}
+.category-revenue-value {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.category-revenue-desktop {
+  display: block;
+}
+.category-revenue-list {
+  display: none;
+}
+@media (max-width: 700px) {
+  .category-revenue {
+    padding: 12px 18px 18px;
+  }
+  .category-limit {
+    margin: 0 0 8px;
+  }
+  .category-revenue-desktop {
+    display: none;
+  }
+  .category-revenue-list {
+    display: block;
+  }
+}
