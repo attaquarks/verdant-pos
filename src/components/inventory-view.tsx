@@ -108,6 +108,7 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
     <>
       <PageHeading
         title={t("Inventory")}
+        subtitle={t("Your products, stock levels, and everyday stock movements.")}
         actions={
           <>
             <a href="/api/export?type=inventory" className="button button--secondary">

@@ -150,23 +150,29 @@ describe("less reading without losing meaning", () => {
       expect(html).toContain(copy);
     expect(html).not.toContain("metric-detail");
     expect(html).not.toContain("Choose a task. Your saved records stay safe.");
-    expect(html).not.toContain("A clear view of your shop. Every number");
+    expect(html).toContain(
+      "A clear view of your shop. Every number comes from your recorded activity.",
+    );
     expect(html).not.toContain("Aaj ka hisaab");
     expect(html).not.toContain("page-footnote");
   });
-  it("keeps page headings brief without explanatory subtitles", () => {
-    for (const name of [
-      "dashboard-view",
-      "inventory-view",
-      "sales-view",
-      "cashbook-view",
-      "expenses-view",
-      "reports-view",
-      "settings-view",
-    ]) {
-      expect(source(name), name).not.toMatch(/subtitle=\{/);
+  it("restores only the original page heading subtitles and two short ledger hints", () => {
+    const expected = {
+      "dashboard-view":
+        "A clear view of your shop. Every number comes from your recorded activity.",
+      "inventory-view": "Your products, stock levels, and everyday stock movements.",
+      "sales-view": "Every sale, payment, and return. A complete record, not a running estimate.",
+      "reports-view": "Sales performance, costs, and cash — with the distinctions that matter.",
+      "cashbook-view": "A chronological record of money in and out. Not the same thing as profit.",
+      "expenses-view": "Keep daily operating costs out of your head and in your books.",
+      "settings-view": "Shop details, reporting preferences, and taking care of your data.",
+    };
+    for (const [name, subtitle] of Object.entries(expected)) {
+      expect(source(name), name).toContain(`subtitle={t("${subtitle}")}`);
       expect(source(name), name).not.toContain('className="page-footnote"');
     }
+    expect(source("cashbook-view")).toContain('<p>{t("paisey ka hisab")}</p>');
+    expect(source("expenses-view")).toContain('<p>{t("kharchon ka hisab")}</p>');
   });
   it("still displays critical cost, partial-profit, cash, expense and backup warnings", () => {
     const reports = render(createElement(ReportsView, { report, range, shop }));

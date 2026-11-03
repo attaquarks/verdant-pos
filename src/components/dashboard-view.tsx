@@ -35,6 +35,7 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
     <>
       <PageHeading
         title={t("Dashboard")}
+        subtitle={t("A clear view of your shop. Every number comes from your recorded activity.")}
         actions={
           <>
             <Link href="/inventory" className="button button--secondary">

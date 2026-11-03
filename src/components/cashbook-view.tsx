@@ -50,6 +50,7 @@ export function CashbookView({
     <>
       <PageHeading
         title={t("Cashbook/Khata")}
+        subtitle={t("A chronological record of money in and out. Not the same thing as profit.")}
         actions={
           <>
             <a
@@ -99,6 +100,7 @@ export function CashbookView({
         <div className="panel-heading">
           <div>
             <h2>{t("Money ledger")}</h2>
+            <p>{t("paisey ka hisab")}</p>
           </div>
           <span className="muted small-text">
             {entries.count.toLocaleString()} {t("entries")}

@@ -41,6 +41,7 @@ export function SalesView({
     <>
       <PageHeading
         title={t("Sales")}
+        subtitle={t("Every sale, payment, and return. A complete record, not a running estimate.")}
         actions={
           <>
             <a

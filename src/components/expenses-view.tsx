@@ -39,6 +39,7 @@ export function ExpensesView({
     <>
       <PageHeading
         title={t("Expenses/Kharchay")}
+        subtitle={t("Keep daily operating costs out of your head and in your books.")}
         actions={
           <>
             <a
@@ -83,6 +84,7 @@ export function ExpensesView({
         <div className="panel-heading">
           <div>
             <h2>{t("Expense ledger")}</h2>
+            <p>{t("kharchon ka hisab")}</p>
           </div>
           <span className="muted small-text">{t("Most recent first")}</span>
         </div>

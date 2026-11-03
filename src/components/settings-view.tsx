@@ -92,7 +92,10 @@ export function SettingsView({ shop, role }: { shop: Shop; role: "owner" | "staf
   const dirty = name.trim() !== shop.name || currency !== shop.currency || zone !== shop.time_zone;
   return (
     <>
-      <PageHeading title={t("Settings")} />
+      <PageHeading
+        title={t("Settings")}
+        subtitle={t("Shop details, reporting preferences, and taking care of your data.")}
+      />
       <section className="panel device-preferences">
         <div>
           <h2>{t("Language & appearance")}</h2>
@@ -113,14 +116,14 @@ export function SettingsView({ shop, role }: { shop: Shop; role: "owner" | "staf
           <div className="panel-heading">
             <div>
               <h2>{t("Business details")}</h2>
-              <p>
+              <span className="muted small-text">
                 {t("Created")}{" "}
                 {formatDate(shop.created_at, shop.time_zone, {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
                 })}
-              </p>
+              </span>
             </div>
             <Store size={20} className="muted" />
           </div>
@@ -236,7 +239,6 @@ export function SettingsView({ shop, role }: { shop: Shop; role: "owner" | "staf
           <div className="panel-heading">
             <div>
               <h2>{t("Exports & backups")}</h2>
-              <p>{t("CSV exports are useful. They are not a full database backup.")}</p>
             </div>
           </div>
           <div className="settings-data-body">
@@ -283,6 +285,7 @@ export function SettingsView({ shop, role }: { shop: Shop; role: "owner" | "staf
               </li>
             </ol>
             <Notice tone="info">
+              {t("CSV exports are useful. They are not a full database backup.")}{" "}
               {t(
                 "Product CSV import adds catalog records only. It does not restore sales, stock history, payments, authentication, or shop membership. Do not treat an export as a restorable backup.",
               )}

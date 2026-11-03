@@ -31,6 +31,7 @@ export function ReportsView({
     <>
       <PageHeading
         title={t("Reports")}
+        subtitle={t("Sales performance, costs, and cash — with the distinctions that matter.")}
         actions={
           <a
             href={`/api/export?type=report&from=${range.from}&to=${range.to}`}

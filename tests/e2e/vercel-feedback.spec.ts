@@ -32,6 +32,37 @@ test("feedback copy and readable responsive blocks remain intact in English and 
     ["/expenses", "Expenses/Kharchay", "خرچے"],
     ["/settings", "Settings", "ترتیبات"],
   ];
+  // Exact English comes from main at 7bdeedb66251344f7e2ab229a860cd719242ad9c.
+  const subtitles: Record<string, { en: string; ur: string }> = {
+    "/": {
+      en: "A clear view of your shop. Every number comes from your recorded activity.",
+      ur: "روز کا حساب ایک نظر میں۔ ہر رقم آپ کے محفوظ لین دین سے آتی ہے۔",
+    },
+    "/inventory": {
+      en: "Your products, stock levels, and everyday stock movements.",
+      ur: "اپنا مال، موجودہ مقدار اور روز کا آیا گیا مال دیکھیں۔",
+    },
+    "/sales": {
+      en: "Every sale, payment, and return. A complete record, not a running estimate.",
+      ur: "ہر فروخت، ادائیگی اور واپسی کا مکمل ریکارڈ؛ اندازہ نہیں۔",
+    },
+    "/reports": {
+      en: "Sales performance, costs, and cash — with the distinctions that matter.",
+      ur: "فروخت، لاگت اور پیسوں کا الگ الگ حساب۔",
+    },
+    "/cashbook": {
+      en: "A chronological record of money in and out. Not the same thing as profit.",
+      ur: "آئے اور گئے پیسوں کا تاریخ وار حساب۔ یہ منافع کا حساب نہیں ہے۔",
+    },
+    "/expenses": {
+      en: "Keep daily operating costs out of your head and in your books.",
+      ur: "روزمرہ کے خرچے یاد رکھنے کے بجائے یہاں لکھیں۔",
+    },
+    "/settings": {
+      en: "Shop details, reporting preferences, and taking care of your data.",
+      ur: "دکان کی تفصیل، حساب کا وقت اور اپنا ریکارڈ محفوظ رکھنا۔",
+    },
+  };
   for (const locale of ["en", "ur"] as const) {
     await context.addCookies([
       { name: "verdant-locale", value: locale, url: APP_ORIGIN },
@@ -48,6 +79,36 @@ test("feedback copy and readable responsive blocks remain intact in English and 
             exact: true,
           }),
         ).toBeVisible();
+        const subtitle = page.locator(".page-heading > div:first-child > h1 + p");
+        await expect(subtitle).toHaveCount(1);
+        await expect(subtitle).toHaveText(subtitles[path][locale]);
+        await expect(subtitle).toBeVisible();
+        const descriptions = page.locator(".panel-heading p, .settings-section-description p");
+        if (path === "/cashbook" || path === "/expenses") {
+          await expect(descriptions).toHaveCount(1);
+          const expected =
+            path === "/cashbook"
+              ? locale === "en"
+                ? "paisey ka hisab"
+                : "پیسوں کا حساب"
+              : locale === "en"
+                ? "kharchon ka hisab"
+                : "خرچوں کا حساب";
+          const ledger =
+            path === "/cashbook"
+              ? locale === "en"
+                ? "Money ledger"
+                : "پیسوں کا کھاتا"
+              : locale === "en"
+                ? "Expense ledger"
+                : "خرچوں کا کھاتا";
+          await expect(descriptions).toHaveText(expected);
+          await expect(
+            page.getByRole("heading", { name: ledger, level: 2, exact: true }).locator("+ p"),
+          ).toHaveText(expected);
+        } else {
+          await expect(descriptions).toHaveCount(0);
+        }
         await expect(page.locator("html")).toHaveAttribute("dir", locale === "ur" ? "rtl" : "ltr");
         expect(
           await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),

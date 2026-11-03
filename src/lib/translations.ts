@@ -4,6 +4,8 @@ import type { Locale } from "./preferences";
  * Never apply this catalogue to user-entered product names, notes, or ledger data.
  */
 export const ur = {
+  "paisey ka hisab": "پیسوں کا حساب",
+  "kharchon ka hisab": "خرچوں کا حساب",
   "No revenue in the first {v0} categories": "پہلی {v0} اقسام کی آمدنی نہیں ہے",
   "Showing first {v0} of {v1} categories": "{v1} میں سے پہلی {v0} اقسام دکھائی گئی ہیں",
   "Chart display": "چارٹ کا منظر",
