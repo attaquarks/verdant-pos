@@ -40,11 +40,7 @@ export function SalesView({
   return (
     <>
       <PageHeading
-        title={t("Sales")}
-        subtitle={
-          t("Every sale, payment, and return. A complete record, not a running estimate.") +
-          t(" · Bikri aur udhaar")
-        }
+        title={t("Sales (bikri / udhaar)")}
         actions={
           <>
             <a
@@ -152,15 +148,12 @@ export function SalesView({
         {!sales.rows.length ? (
           <EmptyState
             icon={ShoppingBag}
-            title={filtered ? t("No matching sales") : t("No sales in this period")}
-            description={
-              filters.dueOnly
-                ? t("No unpaid credit sales were found. You can view all sales instead.")
+            title={
+              filters.dueOnly && !filters.search
+                ? t("No unpaid credit sales")
                 : filtered
-                  ? t("Try a different reference, customer, product, or payment filter.")
-                  : t(
-                      "Record a sale or choose a different date range. Sales appear here only after they are saved.",
-                    )
+                  ? t("No matching sales")
+                  : t("No sales in this period")
             }
             action={
               filtered ? (
@@ -270,11 +263,6 @@ export function SalesView({
         )}
         <Pagination result={sales} noun={t("sales")} />
       </section>
-      <p className="page-footnote">
-        {t(
-          "Original sales remain in their original period. Returns and reversals are adjustments dated when recorded.",
-        )}
-      </p>
       {saleOpen && (
         <SaleDialog
           shop={shop}

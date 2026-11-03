@@ -35,10 +35,6 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
     <>
       <PageHeading
         title={t("Dashboard")}
-        subtitle={
-          t("A clear view of your shop. Every number comes from your recorded activity.") +
-          t(" · Aaj ka hisaab")
-        }
         actions={
           <>
             <Link href="/inventory" className="button button--secondary">
@@ -60,7 +56,6 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
       <section className="daily-tasks" aria-labelledby="daily-tasks-title">
         <div className="daily-tasks-heading">
           <h2 id="daily-tasks-title">{t("What do you need to do?")}</h2>
-          <p>{t("Choose a task. Your saved records stay safe.")}</p>
         </div>
         <div className="task-grid">
           <button
@@ -101,28 +96,18 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
         <Metric
           label={t("Today’s revenue")}
           value={money(summary.revenue, shop.currency)}
-          detail={t("Sales less returns recorded today")}
           icon={CircleDollarSign}
           tone="green"
         />
-        <Metric
-          label={t("Units sold today")}
-          value={quantity(summary.units)}
-          detail={t("{v0} recorded sales · net of returns", {
-            v0: summary.sales_count.toLocaleString(),
-          })}
-          icon={ShoppingBag}
-        />
+        <Metric label={t("Units sold today")} value={quantity(summary.units)} icon={ShoppingBag} />
         <Metric
           label={t("Weekly revenue")}
           value={money(data.week.summary.revenue, shop.currency)}
-          detail={t("Monday through today · net of returns")}
           icon={TrendingUp}
         />
         <Metric
           label={t("Low-stock products")}
           value={data.lowStockCount.toLocaleString()}
-          detail={t("Active products needing attention")}
           icon={Package}
           tone={data.lowStockCount > 0 ? "amber" : undefined}
         />
@@ -132,9 +117,6 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
           <div className="panel-heading">
             <div>
               <h2>{t("Revenue over time")}</h2>
-              <p>
-                {t("Net sales in")} {m(data.range.label)}
-              </p>
             </div>
             <span className="chart-legend">
               <i />
@@ -165,8 +147,7 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
         <section className="panel payments-panel">
           <div className="panel-heading">
             <div>
-              <h2>{t("Today’s payments")}</h2>
-              <p>{t("Money movement, separate from revenue")}</p>
+              <h2>{t("Today’s sales & payments")}</h2>
             </div>
           </div>
           <dl className="payment-breakdown">
@@ -202,14 +183,6 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
               <dd>{money(summary.refunds, shop.currency)}</dd>
             </div>
           </dl>
-          <div className="payment-panel-note">
-            <Wallet size={16} aria-hidden="true" />
-            <p>
-              {t(
-                "Credit is revenue, not cash. Collections appear in money received, not in sales again.",
-              )}
-            </p>
-          </div>
           <Link href="/cashbook" className="panel-bottom-link">
             {t("Open cashbook")} <ArrowRight size={15} />
           </Link>
@@ -220,9 +193,6 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
           <div className="panel-heading">
             <div>
               <h2>{t("Best sellers")}</h2>
-              <p>
-                {t("By net revenue ·")} {m(data.range.label)}
-              </p>
             </div>
             <Link className="text-link" href="/reports">
               {t("All products")} <ArrowRight size={14} />
@@ -233,7 +203,6 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
               compact
               icon={ShoppingBag}
               title={t("Your best sellers will appear here")}
-              description={t("Record your first sales to see what’s moving.")}
             />
           ) : (
             <div className="table-scroll">
@@ -278,21 +247,13 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
                 {t("Stock needs attention")}{" "}
                 {data.lowStockCount > 0 && <Badge tone="amber">{data.lowStockCount}</Badge>}
               </h2>
-              <p>{t("Active products at or below their alert level")}</p>
             </div>
             <Link href="/inventory?stock=alerts&sort=stock&active=active" className="text-link">
               {t("Inventory")} <ArrowRight size={14} />
             </Link>
           </div>
           {!data.lowStock.length ? (
-            <EmptyState
-              compact
-              icon={Package}
-              title={t("No low-stock alerts")}
-              description={t(
-                "Your active inventory has no products at or below their configured alert levels.",
-              )}
-            />
+            <EmptyState compact icon={Package} title={t("No low-stock alerts")} />
           ) : (
             <ul className="low-stock-list">
               {data.lowStock.slice(0, 5).map((product) => (
@@ -331,7 +292,6 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
         <div className="panel-heading">
           <div>
             <h2>{t("Recent sales")}</h2>
-            <p>{t("The latest transactions in your shop")}</p>
           </div>
           <Link href="/sales" className="text-link">
             {t("View all sales")} <ArrowRight size={14} />
@@ -342,9 +302,6 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
             compact
             icon={ShoppingBag}
             title={t("Ready for your first sale")}
-            description={t(
-              "Choose a product, select a payment method, and record your first transaction.",
-            )}
             action={
               <Button size="sm" onClick={() => setSaleOpen(true)}>
                 <Plus size={15} />
@@ -418,11 +375,6 @@ export function DashboardView({ data, shop }: { data: DashboardData; shop: Shop 
           </div>
         )}
       </section>
-      <p className="page-footnote">
-        {t("This week:")} {money(data.week.summary.revenue, shop.currency)}{" "}
-        {t("net revenue across")} {data.week.summary.sales_count.toLocaleString()}{" "}
-        {t("recorded sales. Revenue and cash are deliberately reported separately.")}
-      </p>
       {saleOpen && (
         <SaleDialog
           shop={shop}

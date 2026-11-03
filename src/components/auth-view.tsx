@@ -42,31 +42,23 @@ export function AuthLayout({
             {t("A little more clarity.")} <br />
             {t("A better day in store.")}
           </h1>
-          <p>
-            {t(
-              "Your products, sales, and money in one considered workspace. Built for the work you do every day.",
-            )}
-          </p>
           <ul className="auth-benefits">
             <li>
               <Package size={19} />
               <div>
                 <strong>{t("Know what’s on the shelf")}</strong>
-                <span>{t("Stock, deliveries, and alerts that stay in sync.")}</span>
               </div>
             </li>
             <li>
               <Receipt size={19} />
               <div>
                 <strong>{t("Keep a proper record")}</strong>
-                <span>{t("Sales, credit, and returns with a clear history.")}</span>
               </div>
             </li>
             <li>
               <ShieldCheck size={19} />
               <div>
                 <strong>{t("Understand your numbers")}</strong>
-                <span>{t("Revenue, profit, and cash, clearly separated.")}</span>
               </div>
             </li>
           </ul>
@@ -84,10 +76,7 @@ export function AuthLayout({
           <Brand />
         </div>
         {children}
-        <div className="auth-main-footer">
-          {t("Verdant POS")} <span aria-hidden="true">·</span>{" "}
-          {t("Retail essentials, thoughtfully connected.")}
-        </div>
+        <div className="auth-main-footer">{t("Verdant POS")}</div>
       </main>
     </div>
   );
@@ -249,14 +238,6 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
         : screen === "forgot"
           ? "Forgot your password?"
           : "Choose a new password";
-  const subtitle =
-    screen === "login"
-      ? "Sign in to your shop’s workspace."
-      : screen === "signup"
-        ? "Create your account. Set up your shop next."
-        : screen === "forgot"
-          ? "We’ll email you a secure link to reset it."
-          : "Use a strong password you haven’t used elsewhere.";
   return (
     <AuthLayout>
       <div className="auth-form-wrap">
@@ -264,9 +245,9 @@ export function AuthView({ mode }: { mode: "login" | "reset" }) {
         <h2 ref={heading} tabIndex={-1}>
           {updated ? t("You’re all set") : m(title)}
         </h2>
-        <p className="auth-subtitle">
-          {updated ? t("Your password has been updated securely.") : m(subtitle)}
-        </p>
+        {updated && (
+          <p className="auth-subtitle">{t("Your password has been updated securely.")}</p>
+        )}
         {updated ? (
           <div className="auth-confirmation">
             <CheckCircle2 size={32} aria-hidden="true" />

@@ -297,7 +297,6 @@ export function SaleDialog({
   return (
     <Modal
       title={t("New sale")}
-      description={t("Build the sale, choose payment, and record it once.")}
       wide
       onClose={onClose}
       busy={mutation.pending}
@@ -447,7 +446,6 @@ export function SaleDialog({
             <div className="sale-items-empty">
               <ShoppingBag size={22} aria-hidden="true" />
               <p>{t("Your sale is empty")}</p>
-              <span>{t("Choose a product above to get started.")}</span>
             </div>
           ) : (
             <div className="sale-lines">

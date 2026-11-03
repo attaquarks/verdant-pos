@@ -4,7 +4,7 @@ import { message as sourceMessage } from "@/lib/translations";
 
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Store } from "lucide-react";
+import { ArrowRight, Store } from "lucide-react";
 import { AuthLayout } from "./auth-view";
 import { TimeZoneField } from "./settings-view";
 import { useMutation } from "./hooks";
@@ -32,9 +32,6 @@ export function OnboardingView() {
       <div className="auth-form-wrap onboarding-form-wrap">
         <Badge tone="green">{t("One-time shop setup")}</Badge>
         <h2>{t("Make it your shop.")}</h2>
-        <p className="auth-subtitle">
-          {t("A few essentials, and you’re ready to add products and record your first sale.")}
-        </p>
 
         <div className="onboarding-progress">
           <span className="is-current">
@@ -128,10 +125,6 @@ export function OnboardingView() {
             </Button>
           </fieldset>
         </LocalizedForm>
-        <p className="onboarding-note">
-          <Check size={15} />
-          {t("Your catalog starts empty. No demo records or invented business figures.")}
-        </p>
       </div>
     </AuthLayout>
   );

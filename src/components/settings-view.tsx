@@ -92,21 +92,10 @@ export function SettingsView({ shop, role }: { shop: Shop; role: "owner" | "staf
   const dirty = name.trim() !== shop.name || currency !== shop.currency || zone !== shop.time_zone;
   return (
     <>
-      <PageHeading
-        title={t("Settings")}
-        subtitle={
-          t("Shop details, reporting preferences, and taking care of your data.") +
-          t(" · Dukaan ki tafseel")
-        }
-      />
+      <PageHeading title={t("Settings (dukaan ki tafseel)")} />
       <section className="panel device-preferences">
         <div>
           <h2>{t("Language & appearance")}</h2>
-          <p>
-            {t(
-              "Choose Urdu or English and a comfortable screen colour. This device preference does not change shop records.",
-            )}
-          </p>
         </div>
         <PreferenceControls />
       </section>
@@ -116,7 +105,6 @@ export function SettingsView({ shop, role }: { shop: Shop; role: "owner" | "staf
             <Store size={21} />
           </span>
           <h2>{t("Shop profile")}</h2>
-          <p>{t("The details used throughout your shop’s workspace and exports.")}</p>
           <Badge tone={owner ? "green" : "neutral"}>
             {owner ? t("Owner access") : t("Staff access")}
           </Badge>
@@ -243,7 +231,6 @@ export function SettingsView({ shop, role }: { shop: Shop; role: "owner" | "staf
             <Database size={21} />
           </span>
           <h2>{t("Your data")}</h2>
-          <p>{t("Portable records and a clear plan for backups. Your shop data stays yours.")}</p>
         </div>
         <section className="panel settings-panel">
           <div className="panel-heading">
@@ -254,11 +241,6 @@ export function SettingsView({ shop, role }: { shop: Shop; role: "owner" | "staf
           </div>
           <div className="settings-data-body">
             <h3>{t("Download operational data")}</h3>
-            <p>
-              {t(
-                "Use the date controls on Sales, Reports, Cashbook, and Expenses before exporting. The full product catalog can be downloaded here.",
-              )}
-            </p>
             <div className="button-row">
               <a className="button button--secondary button--sm" href="/api/export?type=inventory">
                 <Download size={15} />
@@ -314,7 +296,6 @@ export function SettingsView({ shop, role }: { shop: Shop; role: "owner" | "staf
             <Globe2 size={21} />
           </span>
           <h2>{t("MVP boundaries")}</h2>
-          <p>{t("A focused, single-shop retail system.")}</p>
         </div>
         <section className="panel settings-panel">
           <div className="settings-data-body">

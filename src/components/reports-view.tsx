@@ -30,11 +30,7 @@ export function ReportsView({
   return (
     <>
       <PageHeading
-        title={t("Reports")}
-        subtitle={
-          t("Sales performance, costs, and cash — with the distinctions that matter.") +
-          t(" · Karobar ka hisaab")
-        }
+        title={t("Reports (karobar ka hisaab)")}
         actions={
           <a
             href={`/api/export?type=report&from=${range.from}&to=${range.to}`}
@@ -64,10 +60,6 @@ export function ReportsView({
         <Metric
           label={t("Net revenue")}
           value={money(summary.revenue, shop.currency)}
-          detail={t("{v0} sales · {v1} net units", {
-            v0: summary.sales_count.toLocaleString(),
-            v1: quantity(summary.units),
-          })}
           icon={CircleDollarSign}
           tone="green"
         />
@@ -80,17 +72,12 @@ export function ReportsView({
               money(summary.gross_profit, shop.currency)
             )
           }
-          detail={
-            summary.gross_profit === null
-              ? t("Historical cost is missing")
-              : t("Net revenue less cost of goods")
-          }
+          detail={summary.gross_profit === null ? t("Historical cost is missing") : undefined}
           icon={TrendingUp}
         />
         <Metric
           label={t("Operating expenses (dukaan ke kharchay)")}
           value={money(summary.expenses, shop.currency)}
-          detail={t("Recorded expenses in this period")}
           icon={Receipt}
         />
         <Metric
@@ -102,7 +89,6 @@ export function ReportsView({
               money(summary.estimated_net_profit, shop.currency)
             )
           }
-          detail={t("Gross profit less recorded expenses")}
           icon={ChartNoAxesCombined}
         />
       </div>
@@ -111,9 +97,6 @@ export function ReportsView({
           <div className="panel-heading">
             <div>
               <h2>{t("Revenue trend")}</h2>
-              <p>
-                {m(range.label)} {t("· Returns on the date recorded")}
-              </p>
             </div>
             <span className="chart-legend">
               <i />
@@ -126,9 +109,6 @@ export function ReportsView({
           <div className="panel-heading">
             <div>
               <h2>{t("Revenue by category")}</h2>
-              <p>
-                {t("Top categories ·")} {shop.currency}
-              </p>
             </div>
           </div>
           <CategoryChart data={report.categories} currency={shop.currency} />
@@ -139,7 +119,6 @@ export function ReportsView({
           <div className="panel-heading">
             <div>
               <h2>{t("Profit breakdown (munafay ki tafseel)")}</h2>
-              <p>{t("Recognized sales, not money collected")}</p>
             </div>
           </div>
           <dl className="report-breakdown">
@@ -191,7 +170,6 @@ export function ReportsView({
           <div className="panel-heading">
             <div>
               <h2>{t("Receipts & credit")}</h2>
-              <p>{t("Collections are cash movement, not new revenue")}</p>
             </div>
           </div>
           <dl className="report-breakdown">
@@ -220,18 +198,12 @@ export function ReportsView({
               <dd>{money(summary.net_cash_movement, shop.currency)}</dd>
             </div>
           </dl>
-          <p className="panel-inline-note">
-            {t(
-              "Money movement includes supplier payments, expenses, and owner deposits / withdrawals. It is not profit.",
-            )}
-          </p>
         </section>
       </div>
       <section className="panel">
         <div className="panel-heading">
           <div>
             <h2>{t("Product performance")}</h2>
-            <p>{t("Original sale snapshots, net of return adjustments · sorted by net revenue")}</p>
           </div>
           <span className="muted small-text">
             {report.products.length.toLocaleString()} {t("products")}
@@ -242,7 +214,6 @@ export function ReportsView({
             compact
             icon={ChartNoAxesCombined}
             title={t("No product activity in this period")}
-            description={t("Sales and returns will build this report. Try a different date range.")}
           />
         ) : (
           <div className="table-scroll">
@@ -306,17 +277,11 @@ export function ReportsView({
         <div className="panel-heading">
           <div>
             <h2>{t("Cashbook by payment method")}</h2>
-            <p>{t("All receipts and outflows for the selected dates")}</p>
           </div>
           <Banknote size={19} className="muted" aria-hidden="true" />
         </div>
         {!report.payment_methods.length ? (
-          <EmptyState
-            compact
-            icon={Banknote}
-            title={t("No cash or digital movements")}
-            description={t("Recorded receipts, refunds, and payments will appear here.")}
-          />
+          <EmptyState compact icon={Banknote} title={t("No cash or digital movements")} />
         ) : (
           <div className="table-scroll">
             <table className="data-table">
@@ -345,12 +310,6 @@ export function ReportsView({
           </div>
         )}
       </section>
-      <p className="page-footnote">
-        {t("Dates use")} {shop.time_zone.replaceAll("_", " ")}
-        {t(
-          ". Weeks start on Monday. Credit sales create receivables; their collections never count as revenue again. Estimated net profit excludes any costs not recorded in this app.",
-        )}
-      </p>
     </>
   );
 }

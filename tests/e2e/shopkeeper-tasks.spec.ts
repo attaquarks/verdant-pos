@@ -39,7 +39,7 @@ test("four dashboard cards work and outstanding udhaar includes all dates until 
     .locator(".sidebar")
     .getByRole("link", { name: /^Inventory/ })
     .click();
-  await expect(page.getByRole("heading", { name: "Inventory", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inventory (maal)", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
   await page.getByRole("button", { name: "Expand sidebar" }).click();
   expect((await page.locator(".sidebar").boundingBox())!.width).toBe(224);
@@ -52,14 +52,31 @@ test("four dashboard cards work and outstanding udhaar includes all dates until 
   await page.getByRole("button", { name: "Use in English" }).click();
   await page.goto(APP_ORIGIN);
   const tasks = page.locator(".daily-tasks");
+  await expect(tasks.locator(".task-card")).toHaveCount(4);
+  for (const description of [
+    "Choose maal, then cash, digital or udhaar.",
+    "See what is left. Receive new deliveries here.",
+    "Open a credit sale and record the money received.",
+    "Rent, electricity or transport — keep a clear record.",
+  ])
+    await expect(tasks.getByText(description, { exact: true })).toBeVisible();
+  await expect(page.locator(".metric-grid .metric")).toHaveCount(4);
+  await expect(page.locator(".metric-grid .metric-detail")).toHaveCount(0);
+  await expect(page.locator(".page-footnote")).toHaveCount(0);
   await tasks.getByRole("button", { name: /Sell to a customer/ }).click();
-  await expect(page.getByRole("dialog", { name: "New sale", exact: true })).toBeVisible();
+  const newSale = page.getByRole("dialog", { name: "New sale", exact: true });
+  await expect(newSale).toBeVisible();
+  await expect(newSale).toContainText("No money is transferred by this app.");
+  await newSale.getByText("Credit / pay later", { exact: true }).click();
+  await expect(newSale).toContainText("Creates an outstanding balance, not a cash receipt.");
   await page.keyboard.press("Escape");
   await tasks.getByRole("link", { name: /Check stock/ }).click();
-  await expect(page.getByRole("heading", { name: "Inventory", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inventory (maal)", exact: true })).toBeVisible();
   await page.goto(APP_ORIGIN);
   await tasks.getByRole("link", { name: /Record a daily expense/ }).click();
-  await expect(page.getByRole("heading", { name: "Expenses", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Expenses (kharchay)", exact: true }),
+  ).toBeVisible();
   await page.goto(APP_ORIGIN);
   await tasks.getByRole("link", { name: /Collect udhaar/ }).click();
   await expect(page).toHaveURL(`${APP_ORIGIN}/sales?due=1`);
@@ -78,6 +95,19 @@ test("four dashboard cards work and outstanding udhaar includes all dates until 
   expect(csv).not.toContain("Fixture Rice");
   await row.getByRole("button", { name: /View sale/ }).click();
   const detail = page.getByRole("dialog").first();
+  await expect(detail).not.toContainText(
+    "Prices, discounts, and costs above are the original historical snapshots.",
+  );
+  await detail.getByRole("button", { name: "Reverse entire sale", exact: true }).click();
+  const reversal = page.getByRole("dialog", { name: "Reverse the entire sale?", exact: true });
+  await expect(reversal).toContainText(
+    "permanent reversal, restocks every original item, and refunds any money due",
+  );
+  await expect(reversal).toContainText("This cannot be undone.");
+  await expect(reversal).toContainText(
+    "Unpaid credit is cancelled without creating a cash refund.",
+  );
+  await reversal.getByRole("button", { name: "Keep sale", exact: true }).click();
   await detail.getByRole("button", { name: "Collect payment", exact: true }).click();
   let collect = page.getByRole("dialog", { name: "Collect credit payment", exact: true });
   await collect.getByRole("spinbutton").fill("3");
@@ -105,7 +135,7 @@ test("four dashboard cards work and outstanding udhaar includes all dates until 
   await detail.getByRole("button", { name: "Close", exact: true }).click();
   await page.reload();
   await expect(
-    page.getByText("No unpaid credit sales were found. You can view all sales instead."),
+    page.getByRole("heading", { name: "No unpaid credit sales", exact: true }),
   ).toBeVisible();
   const after = await request.get(`${FIXTURE_ORIGIN}/__fixture/state`, {
     headers: { [FIXTURE_CONTROL_HEADER]: FIXTURE_CONTROL_VALUE },

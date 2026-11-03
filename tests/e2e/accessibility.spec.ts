@@ -44,19 +44,19 @@ test("WCAG checks and desktop/mobile workflow screenshots use only isolated SQL 
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   for (const [path, title] of [
     ["/", "Dashboard"],
-    ["/inventory", "Inventory"],
-    ["/reports", "Reports"],
-    ["/sales", "Sales"],
-    ["/cashbook", "Cashbook"],
-    ["/expenses", "Expenses"],
-    ["/settings", "Settings"],
+    ["/inventory", "Inventory (maal)"],
+    ["/reports", "Reports (karobar ka hisaab)"],
+    ["/sales", "Sales (bikri / udhaar)"],
+    ["/cashbook", "Cashbook (paisay ka hisaab)"],
+    ["/expenses", "Expenses (kharchay)"],
+    ["/settings", "Settings (dukaan ki tafseel)"],
   ]) {
     await page.goto(`${APP_ORIGIN}${path}`);
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
     await audit(title);
-    if (["Dashboard", "Inventory", "Reports"].includes(title))
+    if (["/", "/inventory", "/reports"].includes(path))
       await page.screenshot({
-        path: `artifacts/screenshots/${title.toLowerCase()}.png`,
+        path: `artifacts/screenshots/${path === "/" ? "dashboard" : path.slice(1)}.png`,
         fullPage: true,
         animations: "disabled",
       });
@@ -74,7 +74,7 @@ test("WCAG checks and desktop/mobile workflow screenshots use only isolated SQL 
   await page.keyboard.press("Escape");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Inventory", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inventory (maal)", exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
     true,
   );

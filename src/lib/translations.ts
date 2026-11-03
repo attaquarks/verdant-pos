@@ -4,6 +4,27 @@ import type { Locale } from "./preferences";
  * Never apply this catalogue to user-entered product names, notes, or ledger data.
  */
 export const ur = {
+  "Product photo": "چیز کی تصویر",
+  "Save photo": "تصویر محفوظ کریں",
+  "Photo saved.": "تصویر محفوظ ہو گئی۔",
+  "Photo unavailable. Try again later.": "تصویر ابھی دستیاب نہیں۔ بعد میں کوشش کریں۔",
+  "Photo is too large. Choose a smaller photo.": "تصویر بہت بڑی ہے۔ چھوٹی تصویر چنیں۔",
+  "Choose a JPEG, PNG or WebP photo.": "JPEG، PNG یا WebP تصویر چنیں۔",
+  "Photo changed. Close and reopen the product.": "تصویر بدل گئی ہے۔ چیز بند کر کے دوبارہ کھولیں۔",
+  "Photo storage is full.": "تصاویر کی جگہ بھر گئی ہے۔",
+  "Photo could not be saved. Try again.": "تصویر محفوظ نہیں ہو سکی۔ دوبارہ کوشش کریں۔",
+  "Product saved. Check the photo on the product card.":
+    "چیز محفوظ ہے۔ چیز کے کارڈ میں تصویر دیکھیں۔",
+  "Product saved. Retry the photo or continue.": "چیز محفوظ ہے۔ تصویر دوبارہ بھیجیں یا آگے بڑھیں۔",
+  "Retry photo": "تصویر دوبارہ بھیجیں",
+  "Continue without photo": "تصویر کے بغیر آگے جائیں",
+  "Today’s sales & payments": "آج کی فروخت اور وصولیاں",
+  "Net movement (paison ka farq · not profit)": "پیسوں کا فرق · منافع نہیں",
+  "Sales (bikri / udhaar)": "فروخت",
+  "Expenses (kharchay)": "خرچے",
+  "Reports (karobar ka hisaab)": "تفصیلی حساب",
+  "Settings (dukaan ki tafseel)": "ترتیبات",
+  "Cash and digital, not profit": "نقد اور ڈیجیٹل؛ منافع نہیں",
   "Money ledger (paisay ka hisaab)": "پیسوں کا حساب",
   "Expense ledger (kharchon ka hisaab)": "خرچوں کا حساب",
   "Net movement (kul paisa andar aur bahar ka farq)": "رقم کی آمد اور خرچ کا فرق",
@@ -17,6 +38,27 @@ export const ur = {
   "All dates · balance due": "تمام تاریخیں · بقایا رقم",
   "No unpaid credit sales were found. You can view all sales instead.":
     "کوئی بقایا ادھار نہیں ملا۔ آپ تمام فروخت دیکھ سکتے ہیں۔",
+  "Aaj ka hisaab": "آج کا حساب",
+  "Maal ka hisaab": "مال کا حساب",
+  "Bikri aur udhaar": "فروخت اور ادھار",
+  "Karobar ka hisaab": "کاروبار کا حساب",
+  "Paisay ka hisaab": "پیسوں کا حساب",
+  "Dukaan ke kharchay": "دکان کے خرچے",
+  "Dukaan ki tafseel": "دکان کی تفصیل",
+  "No products yet": "ابھی کوئی چیز شامل نہیں",
+  "No unpaid credit sales": "کوئی بقایا ادھار نہیں",
+  "Verify the connected project, migrations, and deployment before use.":
+    "استعمال سے پہلے منسلک پروجیکٹ، مائیگریشن اور تعیناتی کی تصدیق کریں۔",
+  "Sales stay in their original period; returns and reversals are dated when recorded.":
+    "فروخت اپنی اصل مدت میں رہتی ہے؛ واپسی اور منسوخی درج ہونے کی تاریخ پر شمار ہوتی ہیں۔",
+  "Cash and digital combined; not profit or a cash-drawer balance.":
+    "نقد اور ڈیجیٹل رقم ملا کر؛ یہ منافع یا نقد دراز کا بقایا نہیں۔",
+  "Expenses post to Cashbook. Purchases: Receive stock. Owner withdrawals: Cashbook, not expenses; they don’t reduce profit.":
+    "خرچے پیسوں کے حساب میں درج ہوتے ہیں۔ مال کی خریداری مال وصول کریں میں لکھیں۔ مالک کی نکالی رقم پیسوں کے حساب میں لکھیں؛ یہ خرچہ نہیں اور منافع کم نہیں کرتی۔",
+  "Sales, collections, and owner deposits; credit sales appear only when collected.":
+    "فروخت، ادھار کی وصولی اور مالک کی ڈالی رقم؛ ادھار صرف وصول ہونے پر دکھتا ہے۔",
+  "Gross profit less recorded expenses; excludes unrecorded costs.":
+    "مجموعی منافع سے درج خرچے کم؛ غیر درج لاگت شامل نہیں۔",
   " · Aaj ka hisaab": " · آج کا حساب",
   " · Maal ka hisaab": " · مال کا حساب",
   " · Bikri aur udhaar": " · فروخت اور ادھار",

@@ -3,7 +3,7 @@ import { LocalizedForm, useDateFormatter, useT } from "./preferences";
 import { message as sourceMessage } from "@/lib/translations";
 import { MOVEMENT_LABELS } from "@/lib/movement-labels";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
 import type Decimal from "decimal.js";
 import { ArrowRight, Download, FileSpreadsheet, History, PackageMinus, Upload } from "lucide-react";
 import type { Category, InventoryMovement, Product, ProductInput, Shop } from "../lib/types";
@@ -11,6 +11,13 @@ import { Exact, money, quantity } from "../lib/money";
 
 import { optional, useMutation, useRemote } from "./hooks";
 import { unitCost } from "./format";
+import {
+  PhotoField,
+  photoErrorKey,
+  preparePhoto,
+  uploadPhoto,
+  type PhotoAttempt,
+} from "./product-photo";
 import {
   Badge,
   Button,
@@ -49,9 +56,46 @@ export function ProductEditor({
   const t = useT();
   const id = useId();
   const mutation = useMutation();
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [savedProduct, setSavedProduct] = useState(false);
+  const saved = useRef<{ id: string; name: string } | null>(null);
+  const attempt = useRef<PhotoAttempt | null>(null);
+  const busy = mutation.pending || photoBusy;
+
+  async function retryPhoto() {
+    if (!attempt.current || !saved.current || photoBusy) return;
+    setPhotoBusy(true);
+    setPhotoError(null);
+    try {
+      await uploadPhoto(attempt.current);
+      onSuccess(sourceMessage("{v0} added to inventory.", { v0: saved.current.name }));
+    } catch (caught) {
+      setPhotoError(sourceMessage(photoErrorKey(caught)));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+  function finishAfterSaved() {
+    onSuccess(sourceMessage("Product saved. Check the photo on the product card."));
+  }
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saved.current || busy) return;
+    setPhotoError(null);
     const form = new FormData(event.currentTarget);
+    let prepared: Blob | null = null;
+    if (!product && photo) {
+      setPhotoBusy(true);
+      try {
+        prepared = await preparePhoto(photo);
+      } catch (caught) {
+        setPhotoError(sourceMessage(photoErrorKey(caught)));
+        setPhotoBusy(false);
+        return;
+      }
+    }
     const input: ProductInput = {
       ...(product ? { expected_updated_at: product.updated_at } : {}),
       name: String(form.get("name") ?? "").trim(),
@@ -69,12 +113,41 @@ export function ProductEditor({
       product_id: product?.id ?? null,
       product: input,
     });
-    if (result)
-      onSuccess(
-        product
-          ? sourceMessage("{v0} updated.", { v0: input.name })
-          : sourceMessage("{v0} added to inventory.", { v0: input.name }),
-      );
+    if (!result) {
+      setPhotoBusy(false);
+      return;
+    }
+    if (!product && prepared) {
+      if (typeof result.id !== "string") {
+        setSavedProduct(true);
+        setPhotoError(sourceMessage("Product saved. Check the photo on the product card."));
+        setPhotoBusy(false);
+        return;
+      }
+      saved.current = { id: result.id, name: input.name };
+      setSavedProduct(true);
+      attempt.current = {
+        productId: result.id,
+        expected: null,
+        requestId: crypto.randomUUID(),
+        bytes: prepared,
+      };
+      try {
+        await uploadPhoto(attempt.current);
+        onSuccess(sourceMessage("{v0} added to inventory.", { v0: input.name }));
+      } catch (caught) {
+        setPhotoError(sourceMessage(photoErrorKey(caught)));
+      } finally {
+        setPhotoBusy(false);
+      }
+      return;
+    }
+    setPhotoBusy(false);
+    onSuccess(
+      product
+        ? sourceMessage("{v0} updated.", { v0: input.name })
+        : sourceMessage("{v0} added to inventory.", { v0: input.name }),
+    );
   }
   const fieldErrors = (name: string) =>
     mutation.fields[name]?.join(" ") || mutation.fields[`product.${name}`]?.join(" ");
@@ -84,22 +157,37 @@ export function ProductEditor({
       description={
         product
           ? t("Catalog changes apply to future sales. Historical sales stay unchanged.")
-          : t("Create a product and set its opening stock.")
+          : undefined
       }
-      onClose={onClose}
-      busy={mutation.pending}
+      onClose={savedProduct ? finishAfterSaved : onClose}
+      busy={busy}
       footer={
-        <FormActions
-          form={`${id}-form`}
-          label={product ? t("Save changes") : t("Add product")}
-          pending={mutation.pending}
-          onCancel={onClose}
-        />
+        savedProduct ? (
+          <>
+            <Button variant="secondary" onClick={finishAfterSaved} disabled={busy}>
+              {t("Continue without photo")}
+            </Button>
+            <Button onClick={retryPhoto} pending={photoBusy} disabled={busy || !attempt.current}>
+              {t("Retry photo")}
+            </Button>
+          </>
+        ) : (
+          <FormActions
+            form={`${id}-form`}
+            label={product ? t("Save changes") : t("Add product")}
+            pending={busy}
+            onCancel={onClose}
+          />
+        )
       }
     >
+      {savedProduct && (
+        <Notice tone="warning">{t("Product saved. Retry the photo or continue.")}</Notice>
+      )}
+      {photoError && <Notice>{photoError}</Notice>}
       <LocalizedForm id={`${id}-form`} onSubmit={save}>
         {mutation.error && <Notice>{mutation.error}</Notice>}
-        <fieldset disabled={mutation.pending} className="plain-fieldset form-grid">
+        <fieldset disabled={busy || savedProduct} className="plain-fieldset form-grid">
           <label className="field field--full">
             <span>
               {t("Product name")} <span className="required-text">*</span>
@@ -166,6 +254,16 @@ export function ProductEditor({
               placeholder={t("e.g. piece, kg, litre")}
             />
           </label>
+          {!product && (
+            <PhotoField
+              id={`${id}-photo`}
+              disabled={busy || savedProduct}
+              onChange={(file) => {
+                setPhoto(file);
+                setPhotoError(null);
+              }}
+            />
+          )}
           <div className="form-divider field--full">
             <span>
               {t("Pricing ·")} {shop.currency}
@@ -244,9 +342,6 @@ export function ProductEditor({
               defaultValue={product?.low_stock_threshold ?? "5"}
               required
             />
-            <span className="form-hint">
-              {t("Alerts when available stock reaches this level.")}
-            </span>
           </label>
           <label className="checkbox-row field--full">
             <input type="checkbox" name="is_active" defaultChecked={product?.is_active ?? true} />
@@ -268,7 +363,6 @@ export function CategoryDialog({ onClose, onSuccess }: Done) {
   return (
     <Modal
       title={t("New category")}
-      description={t("Organize your catalog for faster searching and useful reports.")}
       onClose={onClose}
       busy={mutation.pending}
       footer={
@@ -690,12 +784,7 @@ export function MovementsDialog({
           </Button>
         </Notice>
       ) : !remote.data?.movements.length ? (
-        <EmptyState
-          compact
-          icon={History}
-          title={t("No movements yet")}
-          description={t("Receiving, sales, and adjustments will be recorded here.")}
-        />
+        <EmptyState compact icon={History} title={t("No movements yet")} />
       ) : (
         <div className="table-scroll">
           <table className="data-table movement-table">
@@ -772,7 +861,6 @@ export function ImportDialog({ onClose, onSuccess }: Done) {
   return (
     <Modal
       title={t("Import products")}
-      description={t("Add up to 500 products in one validated, atomic import.")}
       onClose={onClose}
       busy={mutation.pending || reading}
       footer={
@@ -831,7 +919,7 @@ export function ImportDialog({ onClose, onSuccess }: Done) {
           <FileSpreadsheet size={25} aria-hidden="true" />
           <span>
             <strong>{filename || t("Select a CSV file")}</strong>
-            <small>{reading ? t("Reading your file…") : t("Choose file to browse")}</small>
+            {reading && <small>{t("Reading your file…")}</small>}
           </span>
           <input
             id={`${id}-file`}

@@ -18,7 +18,9 @@ import {
 } from "lucide-react";
 import type { InventoryData, Product, Shop } from "../lib/types";
 import { money, quantity, stockStatus } from "../lib/money";
-import { useQueryFilters } from "./hooks";
+import { useQueryFilters, useRemote } from "./hooks";
+import { ProductCard } from "./product-card";
+import { ProductPhoto } from "./product-photo";
 import { unitCost } from "./format";
 import {
   ActionMenu,
@@ -42,18 +44,24 @@ import {
 import { SaleDialog } from "./sale-dialog";
 
 type ProductDialog = {
-  mode: "edit" | "sell" | "receive" | "adjust" | "movements" | "deactivate";
+  mode: "card" | "edit" | "sell" | "receive" | "adjust" | "movements" | "deactivate";
   product: Product;
 };
 export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop }) {
   const t = useT();
   const [search, setSearch] = useState(data.filters.search);
   const [dialog, setDialog] = useState<ProductDialog | null>(null);
+  const [cardHistoryOpen, setCardHistoryOpen] = useState(false);
   const [create, setCreate] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const update = useQueryFilters();
+  const photoIds = data.products.rows.map((p) => p.id).join(",");
+  const photos = useRemote<{ photos: { product_id: string; version: string }[] }>(
+    photoIds ? `/api/products/photo-versions?ids=${encodeURIComponent(photoIds)}` : null,
+  );
+  const photoVersions = new Map((photos.data?.photos ?? []).map((p) => [p.product_id, p.version]));
   useEffect(() => {
     setSearch(data.filters.search);
   }, [data.filters.search]);
@@ -69,6 +77,7 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
     setCategoryOpen(false);
     setImportOpen(false);
     setSuccess(message);
+    photos.reload();
   }
   const statusBadge = (product: Product) => {
     const status = stockStatus(product);
@@ -98,10 +107,7 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
   return (
     <>
       <PageHeading
-        title={t("Inventory")}
-        subtitle={
-          t("Your products, stock levels, and everyday stock movements.") + t(" · Maal ka hisaab")
-        }
+        title={t("Inventory (maal)")}
         actions={
           <>
             <a href="/api/export?type=inventory" className="button button--secondary">
@@ -273,16 +279,7 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
         {!data.products.rows.length ? (
           <EmptyState
             icon={Package}
-            title={
-              filtered ? t("No products match these filters") : t("A well-stocked shop starts here")
-            }
-            description={
-              filtered
-                ? t("Try a different search or clear the filters to see more products.")
-                : t(
-                    "Add your first product or import a CSV to start tracking inventory and recording sales.",
-                  )
-            }
+            title={filtered ? t("No products match these filters") : t("No products yet")}
             action={
               filtered ? (
                 <Button
@@ -328,10 +325,14 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
                       <button
                         type="button"
                         className="product-name-button"
-                        onClick={() => setDialog({ mode: "movements", product })}
+                        onClick={() => setDialog({ mode: "card", product })}
                       >
                         <span className="product-thumbnail" aria-hidden="true">
-                          <Package size={19} strokeWidth={1.5} />
+                          <ProductPhoto
+                            productId={product.id}
+                            name={product.name}
+                            version={photoVersions.get(product.id)}
+                          />
                         </span>
                         <span>
                           <strong>{product.name}</strong>
@@ -427,11 +428,6 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
         )}
         <Pagination result={data.products} noun={t("products")} />
       </section>
-      <p className="page-footnote">
-        {t(
-          "Stock is updated only after a delivery, sale, return, or adjustment is successfully recorded.",
-        )}
-      </p>
       {(create || dialog?.mode === "edit") && (
         <ProductEditor
           product={dialog?.mode === "edit" ? dialog.product : undefined}
@@ -464,6 +460,28 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
       )}
       {dialog?.mode === "adjust" && (
         <AdjustDialog product={dialog.product} onClose={() => setDialog(null)} onSuccess={done} />
+      )}
+      {dialog?.mode === "card" && (
+        <ProductCard
+          product={dialog.product}
+          shop={shop}
+          version={photoVersions.get(dialog.product.id)}
+          photoLoading={photos.loading}
+          photoError={Boolean(photos.error)}
+          onPhotoSaved={photos.reload}
+          onMovements={() => setCardHistoryOpen(true)}
+          onClose={() => {
+            setCardHistoryOpen(false);
+            setDialog(null);
+          }}
+        />
+      )}
+      {dialog?.mode === "card" && cardHistoryOpen && (
+        <MovementsDialog
+          product={dialog.product}
+          shop={shop}
+          onClose={() => setCardHistoryOpen(false)}
+        />
       )}
       {dialog?.mode === "movements" && (
         <MovementsDialog product={dialog.product} shop={shop} onClose={() => setDialog(null)} />

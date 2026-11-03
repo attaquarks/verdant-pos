@@ -208,11 +208,6 @@ export function SaleDetailsDialog({
                     <p>{detail.sale.note}</p>
                   </>
                 )}
-                <p className="form-hint">
-                  {t(
-                    "Prices, discounts, and costs above are the original historical snapshots. Unknown costs remain unavailable.",
-                  )}
-                </p>
               </div>
               <dl className="totals-list">
                 <div>

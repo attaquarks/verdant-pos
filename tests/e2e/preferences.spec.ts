@@ -208,7 +208,7 @@ test("Urdu and night preferences persist from server HTML through all pages and 
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await expect(page.getByRole("heading", { name: "Inventory", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inventory (maal)", exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -256,6 +256,14 @@ test("mobile action menus stay within the viewport in both directions and stock 
   const bounds = async () => {
     const menu = page.getByRole("menu");
     await expect(menu).toBeVisible();
+    await expect
+      .poll(async () => {
+        const rect = await menu.boundingBox();
+        return Boolean(
+          rect && rect.y >= 11 && rect.y + rect.height <= page.viewportSize()!.height - 11,
+        );
+      })
+      .toBe(true);
     const box = (await menu.boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(11);
     expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width - 11);
@@ -291,9 +299,13 @@ test("mobile action menus stay within the viewport in both directions and stock 
       await expect(actions).toBeFocused();
       if (locale === "ur") {
         await rice.locator(".product-name-button").click();
+        const card = page.getByRole("dialog", { name: "Fixture Rice", exact: true });
+        await card.getByRole("button", { name: "مال کا لین دین", exact: true }).click();
         const movements = page.getByRole("dialog", { name: "مال کا لین دین", exact: true });
         await expect(movements.getByText("نیا مال وصول ہوا", { exact: true })).toBeVisible();
         await expect(movements.locator(".badge").filter({ hasText: /^receipt$/ })).toHaveCount(0);
+        await page.keyboard.press("Escape");
+        await expect(card).toBeVisible();
         await page.keyboard.press("Escape");
       }
     }

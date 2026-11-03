@@ -38,11 +38,7 @@ export function ExpensesView({
   return (
     <>
       <PageHeading
-        title={t("Expenses")}
-        subtitle={
-          t("Keep daily operating costs out of your head and in your books.") +
-          t(" · Dukaan ke kharchay")
-        }
+        title={t("Expenses (kharchay)")}
         actions={
           <>
             <a
@@ -87,7 +83,6 @@ export function ExpensesView({
         <div className="panel-heading">
           <div>
             <h2>{t("Expense ledger (kharchon ka hisaab)")}</h2>
-            <p>{t("Saved expenses automatically create cashbook outflows.")}</p>
           </div>
           <span className="muted small-text">{t("Most recent first")}</span>
         </div>
@@ -95,9 +90,6 @@ export function ExpensesView({
           <EmptyState
             icon={Receipt}
             title={t("No expenses in this period")}
-            description={t(
-              "Record rent, utilities, transport, or other operating costs to keep your profit estimate useful.",
-            )}
             action={
               <Button onClick={() => setOpen(true)}>
                 <Plus size={16} />
@@ -150,11 +142,6 @@ export function ExpensesView({
         )}
         <Pagination result={expenses} noun={t("expenses")} />
       </section>
-      <p className="page-footnote">
-        {t(
-          "Inventory purchases belong in Receive stock, not operating expenses. Owner withdrawals are recorded in the cashbook and do not reduce profit.",
-        )}
-      </p>
       {open && (
         <ExpenseDialog
           shop={shop}
@@ -184,7 +171,6 @@ function ExpenseDialog({
   return (
     <Modal
       title={t("Add an expense")}
-      description={t("Record an operating cost that has been paid.")}
       onClose={onClose}
       busy={mutation.pending}
       footer={

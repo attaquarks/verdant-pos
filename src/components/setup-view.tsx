@@ -34,11 +34,6 @@ export function SetupView() {
             {t("A considered workspace.")} <br />
             {t("A real connection first.")}
           </h1>
-          <p>
-            {t(
-              "Your retail console is ready to configure. Connect a Supabase project to enable secure accounts, inventory, and the financial ledger.",
-            )}
-          </p>
           <div className="setup-truth">
             <ShieldCheck size={19} />
             <span>
@@ -52,7 +47,6 @@ export function SetupView() {
           <div className="panel-heading">
             <div>
               <h2>{t("Get your workspace running")}</h2>
-              <p>{t("For the person setting up this installation")}</p>
             </div>
             <Settings2 size={21} className="muted" />
           </div>
@@ -126,7 +120,8 @@ export function SetupView() {
                 <p>
                   {t(
                     "Restart the Next.js server after changing environment variables. Create an account, confirm your email if required, and complete the one-time shop setup.",
-                  )}
+                  )}{" "}
+                  {t("Verify the connected project, migrations, and deployment before use.")}
                 </p>
                 <Link href="/login" className="button button--primary">
                   {t("Continue to sign in")} <ArrowRight size={16} />
@@ -149,11 +144,6 @@ export function SetupView() {
             <span>{t("No demo business data")}</span>
           </div>
         </section>
-        <p className="setup-footnote">
-          {t(
-            "A connected project, applied migrations, and a production deployment still need to be verified in your environment. See the project README and docs for setup, backups, and verification.",
-          )}
-        </p>
       </main>
       <footer className="setup-footer">
         <Brand small />

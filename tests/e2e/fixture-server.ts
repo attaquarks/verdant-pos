@@ -1,7 +1,8 @@
 /**
  * TEST ONLY. A deliberately small HTTP compatibility adapter, NOT GoTrue or
- * PostgREST. The Next application is unchanged and uses its normal SSR/client
- * Supabase code. SQL, grants, transactions, RLS, and RPCs are the real migrations.
+ * PostgREST or Supabase Storage. The Next application is unchanged and uses its
+ * normal SSR/client Supabase code. SQL, grants, transactions, RLS, and RPCs are
+ * the real migrations; Storage bytes and HTTP behavior are test-only doubles.
  * Never import this module from src/ or deploy this service.
  */
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
@@ -24,6 +25,11 @@ import {
 const HOST = "127.0.0.1";
 const PORT = 54321;
 const BODY_LIMIT = 600_000;
+const PHOTO_BODY_LIMIT = 2 * 1024 * 1024;
+const PHOTO_BUCKET = "product-photos";
+// Match the canonical path accepted by the migration's Storage RLS predicate.
+const PHOTO_UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+const PHOTO_PATH = new RegExp(`^(${PHOTO_UUID}/${PHOTO_UUID}/${PHOTO_UUID})$`);
 const MAX_ROWS = 1000;
 // Intentionally public fixture material, not a production JWT signing secret.
 const JWT_FIXTURE_KEY = "verdant-test-only-synthetic-signature-not-a-secret";
@@ -34,6 +40,7 @@ const TABLES = new Set([
   "shop_memberships",
   "categories",
   "products",
+  "product_photos",
   "sales_ledger",
   "sale_items_ledger",
   "inventory_movements",
@@ -79,6 +86,17 @@ const RPCS: Record<string, readonly RpcArgument[]> = {
   import_products: [
     ["p_shop_id", "uuid"],
     ["p_products", "jsonb"],
+    ["p_request_id", "uuid"],
+  ],
+  reserve_product_photo: [
+    ["p_shop_id", "uuid"],
+    ["p_product_id", "uuid"],
+    ["p_upload_id", "uuid"],
+  ],
+  link_product_photo: [
+    ["p_shop_id", "uuid"],
+    ["p_product_id", "uuid"],
+    ["p_expected_version", "uuid"],
     ["p_request_id", "uuid"],
   ],
   receive_stock: [
@@ -542,6 +560,33 @@ async function jsonBody(req: IncomingMessage) {
     throw new HttpError(400, "Invalid JSON body.");
   }
 }
+/** Read bounded raw Storage uploads without buffering an oversized stream. */
+async function photoBody(req: IncomingMessage): Promise<Buffer> {
+  const length = req.headers["content-length"];
+  if (length !== undefined && (!/^\d+$/.test(length) || !Number.isSafeInteger(Number(length)))) {
+    req.resume();
+    throw new HttpError(400, "Invalid upload length.", "InvalidRequest");
+  }
+  if (length !== undefined && Number(length) > PHOTO_BODY_LIMIT) {
+    req.resume();
+    throw new HttpError(413, "Photo exceeds the fixture size limit.", "EntityTooLarge");
+  }
+  let size = 0;
+  let tooLarge = false;
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    size += bytes.length;
+    if (size > PHOTO_BODY_LIMIT) {
+      tooLarge = true;
+      chunks.length = 0;
+    } else if (!tooLarge) chunks.push(bytes);
+  }
+  if (tooLarge) throw new HttpError(413, "Photo exceeds the fixture size limit.", "EntityTooLarge");
+  if (size === 0) throw new HttpError(400, "Photo is empty.", "InvalidRequest");
+  return Buffer.concat(chunks, size);
+}
+
 function send(
   res: ServerResponse,
   status: number,
@@ -558,8 +603,8 @@ function send(
 }
 
 export async function startFixtureServer() {
-  if (process.env.NODE_ENV === "production")
-    throw new Error("Refusing to start the TEST-ONLY fixture with NODE_ENV=production.");
+  if (process.env.NODE_ENV !== "test")
+    throw new Error("Refusing to start the TEST-ONLY fixture unless NODE_ENV=test.");
   const db = await createDatabase();
   let metadata: ColumnMap;
   let fixture: FixtureState["fixture"];
@@ -572,6 +617,9 @@ export async function startFixtureServer() {
   }
   const sessions = new Map<string, Session>();
   const refreshTokens = new Map<string, string>();
+  // Private, ephemeral fixture bytes only. DB objects and this map are changed
+  // together inside the same serial queue; neither is a production storage API.
+  const photoBytes = new Map<string, { bytes: Buffer; mime: string }>();
   let calls: FixtureState["calls"] = {
     signIn: 0,
     getUser: 0,
@@ -701,7 +749,7 @@ export async function startFixtureServer() {
         send(res, 204, undefined, {
           "access-control-allow-methods": "GET,HEAD,POST,OPTIONS",
           "access-control-allow-headers":
-            "authorization,apikey,content-type,x-client-info,x-supabase-api-version,prefer,range,range-unit,accept-profile,content-profile",
+            "authorization,apikey,content-type,cache-control,x-upsert,x-client-info,x-supabase-api-version,prefer,range,range-unit,accept-profile,content-profile",
           "access-control-max-age": "600",
         });
         return;
@@ -716,6 +764,11 @@ export async function startFixtureServer() {
         if (url.search) unsupported("Fixture control endpoints do not accept query parameters.");
         if (url.pathname === "/__fixture/reset" && req.method === "POST") {
           const data = await serial(async () => {
+            // This is the in-memory test DB owner, never an application operation.
+            // Clear objects before reseeding so even a failed seed cannot leave DB
+            // rows whose fixture bytes were discarded (or vice versa).
+            await db.query("delete from storage.objects where bucket_id=$1", [PHOTO_BUCKET]);
+            photoBytes.clear();
             fixture = await seed(db);
             sessions.clear();
             refreshTokens.clear();
@@ -779,6 +832,101 @@ export async function startFixtureServer() {
         sessions.delete(session.access_token);
         refreshTokens.delete(session.refresh_token);
         send(res, 204);
+        return;
+      }
+      if (url.pathname.startsWith("/storage/v1/")) {
+        // Authenticate before consuming bytes, and again on the queue so a
+        // reset/sign-out while the request is in flight cannot retain a session.
+        authenticate(req);
+        if (url.pathname !== req.url)
+          throw new HttpError(400, "Storage query or encoded path is unsupported.", "InvalidKey");
+        let prefix: string;
+        if (req.method === "POST") prefix = `/storage/v1/object/${PHOTO_BUCKET}/`;
+        else if (req.method === "GET") {
+          // storage-js 2.118 uses /object/<bucket>/<path> for download; accept
+          // the explicitly authenticated spelling too, with identical RLS.
+          prefix = url.pathname.startsWith("/storage/v1/object/authenticated/")
+            ? `/storage/v1/object/authenticated/${PHOTO_BUCKET}/`
+            : `/storage/v1/object/${PHOTO_BUCKET}/`;
+        } else throw new HttpError(405, "Unsupported Storage method.", "MethodNotAllowed");
+        if (!url.pathname.startsWith(prefix))
+          throw new HttpError(404, "Storage object not found.", "NoSuchKey");
+        const name = url.pathname.slice(prefix.length);
+        if (!PHOTO_PATH.test(name))
+          throw new HttpError(400, "Invalid photo object path.", "InvalidKey");
+        if (req.method === "POST") {
+          if (req.headers["x-upsert"] && req.headers["x-upsert"] !== "false") {
+            req.resume();
+            throw new HttpError(400, "Photo objects cannot be overwritten.", "InvalidRequest");
+          }
+          if (req.headers["content-encoding"]) {
+            req.resume();
+            throw new HttpError(415, "Content encoding is unsupported.", "InvalidMimeType");
+          }
+          const mime = String(req.headers["content-type"] ?? "")
+            .split(";")[0]
+            .trim()
+            .toLowerCase();
+          const bytes = await photoBody(req);
+          const id = await serial(async () => {
+            const session = authenticate(req);
+            // The tiny Storage DB shim has no service-layer enforcement; read
+            // the real migrated bucket settings as the test DB owner, then use
+            // non-owner authenticated SQL for the actual RLS-protected insert.
+            const bucket = await db.query<{
+              file_size_limit: string | number | null;
+              allowed_mime_types: string[] | null;
+            }>("select file_size_limit,allowed_mime_types from storage.buckets where id=$1", [
+              PHOTO_BUCKET,
+            ]);
+            const settings = bucket.rows[0];
+            if (!settings) throw new HttpError(404, "Storage bucket not found.", "NoSuchBucket");
+            if (
+              settings.file_size_limit !== null &&
+              bytes.length > Number(settings.file_size_limit)
+            )
+              throw new HttpError(413, "Photo exceeds the bucket size limit.", "EntityTooLarge");
+            if (!settings.allowed_mime_types?.includes(mime))
+              throw new HttpError(415, "Photo MIME type is not allowed.", "InvalidMimeType");
+            const result = await asUser<{ id: string }>(
+              db,
+              session.user.id,
+              `insert into storage.objects(bucket_id,name,owner_id,metadata)
+               values($1,$2,$3,jsonb_build_object('size',$4::int,'mimetype',$5::text)) returning id`,
+              [PHOTO_BUCKET, name, session.user.id, bytes.length, mime],
+              "authenticated",
+              "storage.object.upload",
+            );
+            // asUser has committed successfully. No await before setting bytes.
+            photoBytes.set(name, { bytes, mime });
+            return result.rows[0].id;
+          });
+          send(res, 200, { Id: id, Key: `${PHOTO_BUCKET}/${name}` });
+          return;
+        }
+        const photo = await serial(async () => {
+          const session = authenticate(req);
+          const result = await asUser<{ id: string }>(
+            db,
+            session.user.id,
+            "select id from storage.objects where bucket_id=$1 and name=$2",
+            [PHOTO_BUCKET, name],
+            "authenticated",
+            "storage.object.get_authenticated",
+          );
+          // Missing and RLS-filtered objects are deliberately indistinguishable.
+          if (!result.rows.length)
+            throw new HttpError(404, "Storage object not found.", "NoSuchKey");
+          const stored = photoBytes.get(name);
+          if (!stored) throw new Error("Fixture Storage DB/byte map invariant violated.");
+          return stored;
+        });
+        res.writeHead(200, {
+          "content-type": photo.mime,
+          "content-length": String(photo.bytes.length),
+          "cache-control": "no-store",
+        });
+        res.end(photo.bytes);
         return;
       }
       if (url.pathname.startsWith("/rest/v1/")) {
@@ -851,8 +999,10 @@ export async function startFixtureServer() {
       throw new HttpError(404, "This test-only adapter does not implement that endpoint.");
     })().catch((error: unknown) => {
       calls.rejected++;
+      const storageRequest = req.url?.startsWith("/storage/v1/") ?? false;
       if (error instanceof HttpError) {
         send(res, error.status, {
+          ...(storageRequest ? { statusCode: String(error.status), error: error.code } : {}),
           code: error.code,
           error_code: error.code,
           message: error.message,
@@ -864,17 +1014,32 @@ export async function startFixtureServer() {
       }
       const sqlError = error as { code?: string; message?: string; detail?: string };
       if (typeof sqlError.code === "string") {
-        send(res, databaseStatus(sqlError.code), {
+        const status = databaseStatus(sqlError.code);
+        if (storageRequest) {
+          const code =
+            sqlError.code === "23505"
+              ? "Duplicate"
+              : status === 403
+                ? "AccessDenied"
+                : "StorageError";
+          send(res, status, {
+            statusCode: String(status),
+            error: code,
+            code,
+            message:
+              code === "Duplicate" ? "The resource already exists." : "Storage request failed.",
+          });
+          return;
+        }
+        send(res, status, {
           code: sqlError.code,
           message: sqlError.message || "SQL request failed",
           details: sqlError.detail ?? null,
           hint: null,
         });
       } else {
-        console.error(
-          "[fixture] Unexpected adapter error:",
-          error instanceof Error ? error.message : "Unknown error",
-        );
+        // Never log request/SDK errors: they can contain authorization material.
+        console.error("[fixture] Unexpected adapter error.");
         send(res, 500, {
           code: "FIXTURE_INTERNAL",
           message: "Unexpected local fixture adapter failure",

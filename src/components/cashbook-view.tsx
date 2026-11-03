@@ -49,11 +49,7 @@ export function CashbookView({
   return (
     <>
       <PageHeading
-        title={t("Cashbook")}
-        subtitle={
-          t("A chronological record of money in and out. Not the same thing as profit.") +
-          t(" · Paisay ka hisaab")
-        }
+        title={t("Cashbook (paisay ka hisaab)")}
         actions={
           <>
             <a
@@ -85,20 +81,17 @@ export function CashbookView({
         <Metric
           label={t("Money in")}
           value={money(totals.inflow, shop.currency)}
-          detail={t("Sales, collections, and owner deposits")}
           icon={ArrowDownLeft}
           tone="green"
         />
         <Metric
           label={t("Money out")}
           value={money(totals.outflow, shop.currency)}
-          detail={t("Refunds, expenses, and payments")}
           icon={ArrowUpRight}
         />
         <Metric
-          label={t("Net movement (kul paisa andar aur bahar ka farq)")}
+          label={t("Net movement (paison ka farq · not profit)")}
           value={money(totals.net, shop.currency)}
-          detail={t("Cash and digital combined, not profit")}
           icon={Wallet}
         />
       </div>
@@ -106,9 +99,6 @@ export function CashbookView({
         <div className="panel-heading">
           <div>
             <h2>{t("Money ledger (paisay ka hisaab)")}</h2>
-            <p>
-              {m(range.label)} {t("· Most recent first")}
-            </p>
           </div>
           <span className="muted small-text">
             {entries.count.toLocaleString()} {t("entries")}
@@ -118,9 +108,6 @@ export function CashbookView({
           <EmptyState
             icon={Wallet}
             title={t("No money movements in this period")}
-            description={t(
-              "Sales receipts, credit collections, refunds, and expenses appear automatically. Record an owner movement or supplier payment here.",
-            )}
             action={
               <Button onClick={() => setOpen(true)}>
                 <Plus size={16} />
@@ -206,11 +193,6 @@ export function CashbookView({
         )}
         <Pagination result={entries} noun={t("entries")} />
       </section>
-      <p className="page-footnote">
-        {t(
-          "Credit sales do not appear until collected. Purchases and owner movements affect money, not sales revenue. This ledger does not assert a physical cash-drawer balance.",
-        )}
-      </p>
       {open && (
         <CashMovementDialog
           shop={shop}
@@ -241,7 +223,6 @@ function CashMovementDialog({
   return (
     <Modal
       title={t("Record money movement")}
-      description={t("For manual supplier payments and money the owner puts in or takes out.")}
       onClose={onClose}
       busy={mutation.pending}
       footer={

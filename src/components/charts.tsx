@@ -19,14 +19,7 @@ export function RevenueChart({
   const t = useT();
   const id = useId();
   if (!data.length || data.every((point) => Number(point.revenue) === 0))
-    return (
-      <EmptyState
-        compact
-        icon={ChartNoAxesCombined}
-        title={t("No revenue in this period")}
-        description={t("Posted sales and return adjustments will appear here.")}
-      />
-    );
+    return <EmptyState compact icon={ChartNoAxesCombined} title={t("No revenue in this period")} />;
   const width = 760,
     height = 240,
     left = 96,
@@ -132,14 +125,7 @@ export function CategoryChart({
   const id = useId();
   const rows = data.slice(0, 6);
   if (!rows.length || rows.every((row) => Number(row.revenue) === 0))
-    return (
-      <EmptyState
-        compact
-        icon={ChartNoAxesCombined}
-        title={t("No category revenue yet")}
-        description={t("Category performance will follow your recorded sales.")}
-      />
-    );
+    return <EmptyState compact icon={ChartNoAxesCombined} title={t("No category revenue yet")} />;
   const width = 680,
     left = 148,
     right = 84,

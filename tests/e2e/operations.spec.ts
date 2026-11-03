@@ -31,6 +31,8 @@ test("receiving, damage, a restocked return, expense and CSV keep stock and mone
   const stock = rice.locator('[data-label="Stock on hand"] strong');
   await rice.getByRole("button", { name: "Receive Fixture Rice", exact: true }).click();
   const receipt = page.getByRole("dialog", { name: "Receive stock", exact: true });
+  await expect(receipt).toContainText("Paid deliveries post a supplier payment to the cashbook.");
+  await expect(receipt).toContainText("Unpaid deliveries do not create cash movement.");
   await receipt.getByLabel(/^Quantity received/).fill("2");
   await receipt.getByLabel(/^Unit cost/).fill("4.0000");
   await receipt.getByRole("button", { name: "Receive stock", exact: true }).click();
@@ -65,6 +67,8 @@ test("receiving, damage, a restocked return, expense and CSV keep stock and mone
   const detail = page.getByRole("dialog", { name: `Sale ${result.data.reference}`, exact: true });
   await detail.getByRole("button", { name: "Return items", exact: true }).click();
   const returned = page.getByRole("dialog", { name: "Return items", exact: true });
+  await expect(returned).toContainText("Unpaid credit is reduced first; a refund is issued only");
+  await expect(returned).toContainText("Uncheck Restock for damaged or unsellable items.");
   const returnChoice = returned.locator(".return-line").getByRole("checkbox").first();
   await expect(returnChoice).toBeVisible();
   await expect(returnChoice).toBeEnabled();
@@ -80,6 +84,7 @@ test("receiving, damage, a restocked return, expense and CSV keep stock and mone
   await expect(stock).toHaveText("11");
   await page.getByRole("button", { name: "Import", exact: true }).click();
   const imported = page.getByRole("dialog", { name: "Import products", exact: true });
+  await expect(imported).toContainText("If any row fails validation, nothing is imported.");
   await imported.locator('input[type="file"]').setInputFiles({
     name: "products.csv",
     mimeType: "text/csv",
@@ -97,6 +102,8 @@ test("receiving, damage, a restocked return, expense and CSV keep stock and mone
   expect(csv.headers()["content-type"]).toContain("text/csv");
   expect(await csv.text()).toContain("Fixture Imported Oil");
   await page.goto(`${APP_ORIGIN}/expenses`);
+  await expect(page.locator(".panel-heading")).toContainText("Expense ledger (kharchon ka hisaab)");
+  await expect(page.locator(".panel-heading")).not.toContainText("Expenses post to Cashbook.");
   await page.getByRole("button", { name: "Add expense", exact: true }).click();
   const expense = page.getByRole("dialog", { name: "Add an expense", exact: true });
   await expense.getByLabel(/^What was it for/).fill("Shop cleaning supplies");
@@ -122,5 +129,11 @@ test("receiving, damage, a restocked return, expense and CSV keep stock and mone
   await expect(page.locator(".data-table tbody")).toContainText("Supplier payment");
   await expect(page.locator(".data-table tbody")).toContainText("Refund");
   await expect(page.locator(".data-table tbody")).toContainText("Shop cleaning supplies");
+  await expect(page.locator(".metric-grid")).toContainText("not profit");
+  await page.goto(`${APP_ORIGIN}/settings`);
+  await expect(page.locator("#data")).toContainText("not a full database backup");
+  await expect(page.locator("#data")).toContainText(
+    "Do not treat an export as a restorable backup",
+  );
   expect(errors).toEqual([]);
 });
