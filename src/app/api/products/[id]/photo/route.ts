@@ -1,6 +1,7 @@
 import { requireApiContext } from "@/lib/auth";
 import { AppError } from "@/lib/errors";
 import { errorResponse, json } from "@/lib/http";
+import { readPhotoObject } from "@/lib/photo-storage";
 import {
   assertPhotoOrigin,
   normalizePhoto,
@@ -19,10 +20,6 @@ type Context = { params: Promise<{ id: string }> };
 function unavailable(): AppError {
   return new AppError("Photo service unavailable. Retry the same request safely.", 503);
 }
-function status(error: { status?: string | number; statusCode?: string | number }): number {
-  return Number(error.status ?? error.statusCode ?? 0);
-}
-
 // Storage uploads do not currently accept an abort signal. A timeout can leave
 // an object behind; the unchanged retry checks it byte-for-byte before linking.
 async function timed<T>(work: Promise<T>): Promise<T> {
@@ -84,22 +81,21 @@ export async function PUT(request: Request, context: Context) {
       bucket.upload(path, normalized, {
         contentType: "image/webp",
         upsert: false,
-        cacheControl: "0",
+        // Discourage browser caching; Supabase's authenticated CDN may still
+        // serve a cached object to the same JWT until that token expires.
+        cacheControl: "0, no-store, private",
       }),
     );
     if (uploaded.error) {
       // A prior response may have been lost, or another identical retry won.
       // Never accept a duplicate key with different normalized bytes.
-      const prior = await bucket.download(
-        path,
-        {},
-        { signal: AbortSignal.timeout(10_000), cache: "no-store" },
-      );
-      if (prior.error || !prior.data) throw unavailable();
-      if (
-        prior.data.size > PHOTO_MAX_BYTES ||
-        !Buffer.from(await prior.data.arrayBuffer()).equals(normalized)
-      )
+      let prior: Buffer;
+      try {
+        prior = await readPhotoObject(supabase, path);
+      } catch {
+        throw unavailable();
+      }
+      if (prior.length > PHOTO_MAX_BYTES || !prior.equals(normalized))
         throw new AppError("Photo request ID was already used for different content.", 409);
     }
     const linked = await supabase.rpc("link_product_photo", {
@@ -142,19 +138,10 @@ export async function GET(_request: Request, context: Context) {
     if (metadata.error) throw unavailable();
     if (!metadata.data) throw new AppError("Photo not found.", 404);
     const path = photoPath(shop.id, productId, metadata.data.version);
-    const download = await supabase.storage
-      .from(PHOTO_BUCKET)
-      .download(path, {}, { signal: AbortSignal.timeout(10_000), cache: "no-store" });
-    if (download.error) {
-      if (status(download.error) === 404) throw new AppError("Photo not found.", 404);
-      throw unavailable();
-    }
-    if (!download.data) throw unavailable();
-    // Storage enforces the bucket cap; check again before reading/decoding.
-    if (download.data.size > PHOTO_MAX_BYTES) throw new AppError("Photo unavailable.", 404);
+    const bytes = await readPhotoObject(supabase, path);
     let normalized: Buffer;
     try {
-      normalized = await normalizePhoto(Buffer.from(await download.data.arrayBuffer()));
+      normalized = await normalizePhoto(bytes);
     } catch {
       throw new AppError("Photo unavailable.", 404);
     }

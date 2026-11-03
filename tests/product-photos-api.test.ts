@@ -11,6 +11,9 @@ const m = vi.hoisted(() => ({
   listResult: null as unknown,
 }));
 vi.mock("@/lib/auth", () => ({ requireApiContext: m.requireApiContext }));
+vi.mock("@/lib/env", () => ({
+  getSupabaseConfig: () => ({ url: "http://127.0.0.1:54321", key: "sb_publishable_fixture" }),
+}));
 import { GET, PUT } from "../src/app/api/products/[id]/photo/route";
 import { GET as versions } from "../src/app/api/products/photo-versions/route";
 import { AppError } from "../src/lib/errors";
@@ -95,7 +98,11 @@ describe("product photo API", () => {
     expect(m.upload).toHaveBeenCalledOnce();
     const [path, bytes, options] = m.upload.mock.calls[0];
     expect(path).toBe(`${shop}/${product}/${key}`);
-    expect(options).toEqual({ contentType: "image/webp", upsert: false, cacheControl: "0" });
+    expect(options).toEqual({
+      contentType: "image/webp",
+      upsert: false,
+      cacheControl: "0, no-store, private",
+    });
     const info = await sharp(bytes).metadata();
     expect(info.format).toBe("webp");
     expect(info.exif).toBeUndefined();

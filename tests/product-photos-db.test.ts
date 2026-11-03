@@ -25,7 +25,7 @@ function asUser<T extends Record<string, unknown> = Record<string, unknown>>(
     operation ??
     (/^\s*insert into storage\.objects/i.test(sql)
       ? "storage.object.upload"
-      : "storage.object.get_authenticated");
+      : "storage.s3.object.get");
   return authenticatedQuery<T>(db, user, sql, params, role, op);
 }
 
@@ -211,18 +211,11 @@ describe("product photo storage and metadata authorization", () => {
     await upload(USERS.owner, name);
     const query = "select name from storage.objects where name=$1";
     expect(
-      (
-        await asUser(
-          db,
-          USERS.owner,
-          query,
-          [name],
-          "authenticated",
-          "storage.object.get_authenticated",
-        )
-      ).rows,
+      (await asUser(db, USERS.owner, query, [name], "authenticated", "storage.s3.object.get")).rows,
     ).toHaveLength(1);
     for (const operation of [
+      "storage.object.get_authenticated",
+      "storage.object.get_authenticated_info",
       "storage.object.sign",
       "storage.object.sign_many",
       "storage.object.get_public",

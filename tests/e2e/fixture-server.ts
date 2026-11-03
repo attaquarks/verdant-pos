@@ -912,7 +912,9 @@ export async function startFixtureServer() {
             "select id from storage.objects where bucket_id=$1 and name=$2",
             [PHOTO_BUCKET, name],
             "authenticated",
-            "storage.object.get_authenticated",
+            // Local adapter models the authorization of user-scoped S3 reads;
+            // hosted production reads use the real S3 protocol instead.
+            "storage.s3.object.get",
           );
           // Missing and RLS-filtered objects are deliberately indistinguishable.
           if (!result.rows.length)
