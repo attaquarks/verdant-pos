@@ -44,12 +44,12 @@ test("WCAG checks and desktop/mobile workflow screenshots use only isolated SQL 
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   for (const [path, title] of [
     ["/", "Dashboard"],
-    ["/inventory", "Inventory (maal)"],
-    ["/reports", "Reports (karobar ka hisaab)"],
-    ["/sales", "Sales (bikri / udhaar)"],
-    ["/cashbook", "Cashbook (paisay ka hisaab)"],
-    ["/expenses", "Expenses (kharchay)"],
-    ["/settings", "Settings (dukaan ki tafseel)"],
+    ["/inventory", "Inventory"],
+    ["/reports", "Reports"],
+    ["/sales", "Sales"],
+    ["/cashbook", "Cashbook/Khata"],
+    ["/expenses", "Expenses/Kharchay"],
+    ["/settings", "Settings"],
   ]) {
     await page.goto(`${APP_ORIGIN}${path}`);
     await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
@@ -74,7 +74,7 @@ test("WCAG checks and desktop/mobile workflow screenshots use only isolated SQL 
   await page.keyboard.press("Escape");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Inventory (maal)", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inventory", exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
     true,
   );

@@ -49,7 +49,7 @@ export function CashbookView({
   return (
     <>
       <PageHeading
-        title={t("Cashbook (paisay ka hisaab)")}
+        title={t("Cashbook/Khata")}
         actions={
           <>
             <a
@@ -90,7 +90,7 @@ export function CashbookView({
           icon={ArrowUpRight}
         />
         <Metric
-          label={t("Net movement (paison ka farq · not profit)")}
+          label={t("Net movement · not profit")}
           value={money(totals.net, shop.currency)}
           icon={Wallet}
         />
@@ -98,7 +98,7 @@ export function CashbookView({
       <section className="panel">
         <div className="panel-heading">
           <div>
-            <h2>{t("Money ledger (paisay ka hisaab)")}</h2>
+            <h2>{t("Money ledger")}</h2>
           </div>
           <span className="muted small-text">
             {entries.count.toLocaleString()} {t("entries")}
@@ -254,9 +254,7 @@ function CashMovementDialog({
           <label className="field field--full">
             <span>{t("Movement type")}</span>
             <select data-autofocus value={kind} onChange={(event) => setKind(event.target.value)}>
-              <option value="supplier_payment">
-                {t("Supplier payment — money out (maal ki adaigi)")}
-              </option>
+              <option value="supplier_payment">{t("Supplier payment — money out")}</option>
               <option value="owner_withdrawal">{t("Owner withdrawal — money out")}</option>
               <option value="owner_deposit">{t("Owner deposit — money in")}</option>
             </select>

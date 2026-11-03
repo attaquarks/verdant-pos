@@ -39,7 +39,7 @@ test("four dashboard cards work and outstanding udhaar includes all dates until 
     .locator(".sidebar")
     .getByRole("link", { name: /^Inventory/ })
     .click();
-  await expect(page.getByRole("heading", { name: "Inventory (maal)", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inventory", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
   await page.getByRole("button", { name: "Expand sidebar" }).click();
   expect((await page.locator(".sidebar").boundingBox())!.width).toBe(224);
@@ -71,12 +71,10 @@ test("four dashboard cards work and outstanding udhaar includes all dates until 
   await expect(newSale).toContainText("Creates an outstanding balance, not a cash receipt.");
   await page.keyboard.press("Escape");
   await tasks.getByRole("link", { name: /Check stock/ }).click();
-  await expect(page.getByRole("heading", { name: "Inventory (maal)", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inventory", exact: true })).toBeVisible();
   await page.goto(APP_ORIGIN);
   await tasks.getByRole("link", { name: /Record a daily expense/ }).click();
-  await expect(
-    page.getByRole("heading", { name: "Expenses (kharchay)", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Expenses/Kharchay", exact: true })).toBeVisible();
   await page.goto(APP_ORIGIN);
   await tasks.getByRole("link", { name: /Collect udhaar/ }).click();
   await expect(page).toHaveURL(`${APP_ORIGIN}/sales?due=1`);

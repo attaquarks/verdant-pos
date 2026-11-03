@@ -40,7 +40,7 @@ export function SalesView({
   return (
     <>
       <PageHeading
-        title={t("Sales (bikri / udhaar)")}
+        title={t("Sales")}
         actions={
           <>
             <a

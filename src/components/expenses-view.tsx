@@ -38,7 +38,7 @@ export function ExpensesView({
   return (
     <>
       <PageHeading
-        title={t("Expenses (kharchay)")}
+        title={t("Expenses/Kharchay")}
         actions={
           <>
             <a
@@ -82,7 +82,7 @@ export function ExpensesView({
       <section className="panel">
         <div className="panel-heading">
           <div>
-            <h2>{t("Expense ledger (kharchon ka hisaab)")}</h2>
+            <h2>{t("Expense ledger")}</h2>
           </div>
           <span className="muted small-text">{t("Most recent first")}</span>
         </div>

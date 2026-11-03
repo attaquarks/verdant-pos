@@ -92,7 +92,7 @@ export function SettingsView({ shop, role }: { shop: Shop; role: "owner" | "staf
   const dirty = name.trim() !== shop.name || currency !== shop.currency || zone !== shop.time_zone;
   return (
     <>
-      <PageHeading title={t("Settings (dukaan ki tafseel)")} />
+      <PageHeading title={t("Settings")} />
       <section className="panel device-preferences">
         <div>
           <h2>{t("Language & appearance")}</h2>

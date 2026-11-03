@@ -30,7 +30,7 @@ export function ReportsView({
   return (
     <>
       <PageHeading
-        title={t("Reports (karobar ka hisaab)")}
+        title={t("Reports")}
         actions={
           <a
             href={`/api/export?type=report&from=${range.from}&to=${range.to}`}
@@ -64,7 +64,7 @@ export function ReportsView({
           tone="green"
         />
         <Metric
-          label={t("Gross profit (munafa before kharchay)")}
+          label={t("Gross profit")}
           value={
             summary.gross_profit === null ? (
               <span className="metric-unavailable">{t("Unavailable")}</span>
@@ -76,12 +76,12 @@ export function ReportsView({
           icon={TrendingUp}
         />
         <Metric
-          label={t("Operating expenses (dukaan ke kharchay)")}
+          label={t("Operating expenses")}
           value={money(summary.expenses, shop.currency)}
           icon={Receipt}
         />
         <Metric
-          label={t("Estimated net profit (andazay ka munafa)")}
+          label={t("Estimated net profit")}
           value={
             summary.estimated_net_profit === null ? (
               <span className="metric-unavailable">{t("Unavailable")}</span>
@@ -118,7 +118,7 @@ export function ReportsView({
         <section className="panel">
           <div className="panel-heading">
             <div>
-              <h2>{t("Profit breakdown (munafay ki tafseel)")}</h2>
+              <h2>{t("Profit breakdown")}</h2>
             </div>
           </div>
           <dl className="report-breakdown">

@@ -107,7 +107,7 @@ export function InventoryView({ data, shop }: { data: InventoryData; shop: Shop 
   return (
     <>
       <PageHeading
-        title={t("Inventory (maal)")}
+        title={t("Inventory")}
         actions={
           <>
             <a href="/api/export?type=inventory" className="button button--secondary">

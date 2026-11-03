@@ -29,7 +29,7 @@ test("photo creation, lost response retry, fixed thumbnail, product card, replac
   await page.locator("form").getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   await page.goto(`${APP_ORIGIN}/inventory`);
-  await expect(page.getByRole("heading", { name: "Inventory (maal)", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inventory", exact: true })).toBeVisible();
   const rice = page.locator(".inventory-table tbody tr").filter({ hasText: "Fixture Rice" });
   const baseline = (await rice.boundingBox())!.height;
   const first = await sharp({

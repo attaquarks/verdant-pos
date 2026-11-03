@@ -208,7 +208,7 @@ test("Urdu and night preferences persist from server HTML through all pages and 
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await expect(page.getByRole("heading", { name: "Inventory (maal)", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inventory", exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });
 

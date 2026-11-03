@@ -76,7 +76,7 @@ test("a new authenticated owner configures the shop timezone and completes the f
   await expect(
     page
       .locator(".metric")
-      .filter({ has: page.getByText("Gross profit (munafa before kharchay)", { exact: true }) })
+      .filter({ has: page.getByText("Gross profit", { exact: true }) })
       .locator(".metric-value"),
   ).toContainText("40.00");
   await expect(page.locator(".timezone-note")).toContainText("Asia/Karachi");

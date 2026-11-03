@@ -71,7 +71,7 @@ async function signIn(page: Page) {
 async function inventory(page: Page) {
   await signIn(page);
   await page.goto(`${APP_ORIGIN}/inventory`);
-  await expect(page.getByRole("heading", { name: "Inventory (maal)", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inventory", exact: true })).toBeVisible();
 }
 function productRow(page: Page, name: string) {
   return page
@@ -370,7 +370,7 @@ test("credit sale and digital collection change receivable/cashbook but never du
   await expect(
     details
       .locator("dt")
-      .filter({ hasText: /^Balance due \(baqi udhaar\)$/ })
+      .filter({ hasText: /^Balance due$/ })
       .locator("..")
       .locator("dd"),
   ).toHaveText("$0.00");
@@ -394,12 +394,12 @@ test("all seven destinations navigate and reports show real SQL aggregates", asy
 }) => {
   await signIn(page);
   for (const [path, label, heading] of [
-    ["/inventory", "Inventory", "Inventory (maal)"],
-    ["/sales", "Sales", "Sales (bikri / udhaar)"],
-    ["/reports", "Reports", "Reports (karobar ka hisaab)"],
-    ["/cashbook", "Cashbook", "Cashbook (paisay ka hisaab)"],
-    ["/expenses", "Expenses", "Expenses (kharchay)"],
-    ["/settings", "Settings", "Settings (dukaan ki tafseel)"],
+    ["/inventory", "Inventory", "Inventory"],
+    ["/sales", "Sales", "Sales"],
+    ["/reports", "Reports", "Reports"],
+    ["/cashbook", "Cashbook", "Cashbook/Khata"],
+    ["/expenses", "Expenses", "Expenses/Kharchay"],
+    ["/settings", "Settings", "Settings"],
     ["/", "Dashboard", "Dashboard"],
   ]) {
     const nav = page.getByRole("navigation", { name: "Main navigation", exact: true });
@@ -432,9 +432,7 @@ test.describe("mobile", () => {
     await expect(menu.getByRole("navigation").getByRole("link")).toHaveCount(7);
     await menu.getByRole("link", { name: /^Inventory/ }).click();
     await expect(menu).toHaveCount(0);
-    await expect(
-      page.getByRole("heading", { name: "Inventory (maal)", exact: true }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Inventory", exact: true })).toBeVisible();
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
       "No horizontal page overflow at 390px",
@@ -455,9 +453,7 @@ test.describe("mobile", () => {
       .getByRole("dialog", { name: "Your workspace", exact: true })
       .getByRole("link", { name: "Reports", exact: true })
       .click();
-    await expect(
-      page.getByRole("heading", { name: "Reports (karobar ka hisaab)", exact: true }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Reports", exact: true })).toBeVisible();
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
       "No horizontal report overflow at 390px",

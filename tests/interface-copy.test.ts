@@ -205,8 +205,7 @@ describe("less reading without losing meaning", () => {
         total: "5.00",
       }),
     );
-    for (const copy of ["Expense ledger (kharchon ka hisaab)", "$5.00"])
-      expect(expenses).toContain(copy);
+    for (const copy of ["Expense ledger", "$5.00"]) expect(expenses).toContain(copy);
     const settings = render(createElement(SettingsView, { shop, role: "owner" }));
     for (const copy of [
       "not a full database backup",

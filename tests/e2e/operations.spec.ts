@@ -102,7 +102,7 @@ test("receiving, damage, a restocked return, expense and CSV keep stock and mone
   expect(csv.headers()["content-type"]).toContain("text/csv");
   expect(await csv.text()).toContain("Fixture Imported Oil");
   await page.goto(`${APP_ORIGIN}/expenses`);
-  await expect(page.locator(".panel-heading")).toContainText("Expense ledger (kharchon ka hisaab)");
+  await expect(page.locator(".panel-heading")).toContainText("Expense ledger");
   await expect(page.locator(".panel-heading")).not.toContainText("Expenses post to Cashbook.");
   await page.getByRole("button", { name: "Add expense", exact: true }).click();
   const expense = page.getByRole("dialog", { name: "Add an expense", exact: true });
@@ -122,7 +122,7 @@ test("receiving, damage, a restocked return, expense and CSV keep stock and mone
   await expect(
     page
       .locator(".metric")
-      .filter({ has: page.getByText("Estimated net profit (andazay ka munafa)", { exact: true }) })
+      .filter({ has: page.getByText("Estimated net profit", { exact: true }) })
       .locator(".metric-value"),
   ).toHaveText("$9.00");
   await page.goto(`${APP_ORIGIN}/cashbook?preset=day`);
