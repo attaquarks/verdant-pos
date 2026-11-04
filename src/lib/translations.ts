@@ -4,6 +4,26 @@ import type { Locale } from "./preferences";
  * Never apply this catalogue to user-entered product names, notes, or ledger data.
  */
 export const ur = {
+  "I confirm this is the account whose password I want to reset.":
+    "میں تصدیق کرتا ہوں کہ میں اسی اکاؤنٹ کا پاس ورڈ تبدیل کرنا چاہتا ہوں۔",
+  "Email confirmed": "ای میل کی تصدیق ہو گئی",
+  "Link unavailable": "لنک دستیاب نہیں",
+  "Email confirmed, return to original window and sign in.":
+    "ای میل کی تصدیق ہو گئی، اصل ونڈو میں واپس جا کر سائن ان کریں۔",
+  "Your password has been updated. Return to the original window and sign in with your new password.":
+    "آپ کا پاس ورڈ بدل گیا ہے۔ اصل ونڈو میں واپس جا کر نئے پاس ورڈ سے سائن ان کریں۔",
+  "Resetting password for": "اس اکاؤنٹ کا پاس ورڈ تبدیل ہو رہا ہے:",
+  "If this is not your account, close this page. Your other signed-in account will not be changed.":
+    "اگر یہ آپ کا اکاؤنٹ نہیں تو یہ صفحہ بند کر دیں۔ آپ کا دوسرا سائن ان شدہ اکاؤنٹ تبدیل نہیں ہو گا۔",
+  "Check your inbox for a confirmation link. Then return here and sign in.":
+    "تصدیقی لنک کے لیے اپنی ای میل دیکھیں۔ پھر یہاں واپس آ کر سائن ان کریں۔",
+  "This link could not be verified. It may be invalid, used, or expired. Request a new link. Older links may need the original browser.":
+    "اس لنک کی تصدیق نہیں ہو سکی۔ یہ غلط، استعمال شدہ یا میعاد ختم ہونے والا ہو سکتا ہے۔ نیا لنک طلب کریں۔ پرانے لنک کے لیے اصل براؤزر درکار ہو سکتا ہے۔",
+  "Too many emails requested. Please wait before requesting another link. Check your inbox and spam folder first.":
+    "بہت زیادہ ای میل کی درخواستیں ہو گئی ہیں۔ نیا لنک طلب کرنے سے پہلے انتظار کریں۔ پہلے ان باکس اور اسپیم فولڈر دیکھیں۔",
+  "Authentication could not be completed. Please try again later.":
+    "تصدیق مکمل نہیں ہو سکی۔ کچھ دیر بعد دوبارہ کوشش کریں۔",
+
   "paisey ka hisab": "پیسوں کا حساب",
   "kharchon ka hisab": "خرچوں کا حساب",
   "No revenue in the first {v0} categories": "پہلی {v0} اقسام کی آمدنی نہیں ہے",

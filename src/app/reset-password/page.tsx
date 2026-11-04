@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { AuthView } from "@/components/auth-view";
-import { requireUser } from "@/lib/auth";
-
-export const metadata: Metadata = { title: "Reset password" };
-export default async function ResetPasswordPage() {
-  await requireUser();
-  return <AuthView mode="reset" />;
+import { EmailLinkView } from "@/components/email-link-view";
+export const metadata: Metadata = { title: "Reset password", referrer: "no-referrer" };
+// Public shell only. The form requires a verified, isolated recovery link, not an app cookie.
+export default function ResetPasswordPage() {
+  return <EmailLinkView recoveryOnly />;
 }

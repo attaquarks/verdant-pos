@@ -46,6 +46,21 @@ describe("HTTPS session cookie hardening", () => {
     createBrowserSupabase();
     expect(factories.browser.mock.calls[0][2].cookieOptions.secure).toBe(true);
   });
+  it("never autodetects emailed credentials in the normal cookie-backed app client", () => {
+    vi.stubGlobal("window", { location: { origin: "https://shop.example" } });
+    createBrowserSupabase();
+    expect(factories.browser.mock.calls[0][2].auth.detectSessionInUrl).toBe(false);
+  });
+  it.each(["/auth/callback", "/reset-password", "/auth/email-code"])(
+    "never reads or refreshes an app identity for public email path %s",
+    async (path) => {
+      const response = await proxy(new NextRequest(`https://shop.example${path}`));
+      expect(factories.server).not.toHaveBeenCalled();
+      expect(response.headers.get("set-cookie")).toBeNull();
+      expect(response.headers.get("referrer-policy")).toBe("no-referrer");
+      expect(response.headers.get("cache-control")).toContain("no-store");
+    },
+  );
   it("allows browser loopback cookies for the isolated test harness", () => {
     vi.stubGlobal("window", { location: { origin: "http://127.0.0.1:3000" } });
     createBrowserSupabase();

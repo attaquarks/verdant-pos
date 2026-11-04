@@ -242,6 +242,7 @@ interface FixtureUser {
   role: string;
   email: string;
   email_confirmed_at: string;
+  recovery_sent_at?: string;
   confirmed_at: string;
   phone: string;
   created_at: string;
@@ -617,6 +618,8 @@ export async function startFixtureServer() {
   }
   const sessions = new Map<string, Session>();
   const refreshTokens = new Map<string, string>();
+  // Email tests model logout revoking refresh, not already-issued access JWTs.
+  const emailAccessTokens = new Set<string>();
   // Private, ephemeral fixture bytes only. DB objects and this map are changed
   // together inside the same serial queue; neither is a production storage API.
   const photoBytes = new Map<string, { bytes: Buffer; mime: string }>();
@@ -636,11 +639,14 @@ export async function startFixtureServer() {
     tail = result.catch(() => undefined);
     return result;
   }
-  function issue(user: FixtureUser): Session {
+  const changedPasswords = new Map<string, string>();
+  const emailHashes = new Map<string, { purpose: string; session: Session }>();
+  function issue(user: FixtureUser, method = "password"): Session {
     // Bound session memory even during long manual test sessions.
     for (const [token, old] of sessions)
       if (old.expires_at <= Date.now() / 1000) {
         sessions.delete(token);
+        emailAccessTokens.delete(token);
         refreshTokens.delete(old.refresh_token);
       }
     if (sessions.size >= 100)
@@ -658,7 +664,7 @@ export async function startFixtureServer() {
       exp: expires_at,
       session_id: randomUUID(),
       aal: "aal1",
-      amr: [{ method: "password", timestamp: now }],
+      amr: [{ method, timestamp: now }],
       app_metadata: user.app_metadata,
       user_metadata: {},
       is_anonymous: false,
@@ -747,7 +753,7 @@ export async function startFixtureServer() {
       res.setHeader("x-content-type-options", "nosniff");
       if (req.method === "OPTIONS") {
         send(res, 204, undefined, {
-          "access-control-allow-methods": "GET,HEAD,POST,OPTIONS",
+          "access-control-allow-methods": "GET,HEAD,POST,PUT,OPTIONS",
           "access-control-allow-headers":
             "authorization,apikey,content-type,cache-control,x-upsert,x-client-info,x-supabase-api-version,prefer,range,range-unit,accept-profile,content-profile",
           "access-control-max-age": "600",
@@ -770,12 +776,35 @@ export async function startFixtureServer() {
             await db.query("delete from storage.objects where bucket_id=$1", [PHOTO_BUCKET]);
             photoBytes.clear();
             fixture = await seed(db);
+            changedPasswords.clear();
+            emailHashes.clear();
             sessions.clear();
+            emailAccessTokens.clear();
             refreshTokens.clear();
             calls = { signIn: 0, getUser: 0, refresh: 0, reads: 0, rpcs: 0, rejected: 0 };
             return snapshot();
           });
           send(res, 200, data);
+          return;
+        }
+        // Synthetic email sessions ONLY: no SMTP, real identities or hosted Auth.
+        if (url.pathname === "/__fixture/email-session" && req.method === "POST") {
+          const body = await jsonBody(req);
+          if (!["signup", "recovery", "password", "otp"].includes(String(body.purpose)))
+            throw new HttpError(400, "Unknown fixture email purpose.");
+          const user = userFor("other");
+          if (body.purpose === "recovery" || body.purpose === "otp")
+            user.recovery_sent_at = new Date().toISOString();
+          if (body.purpose === "recovery" && body.unconfirmed === true) {
+            user.email_confirmed_at = "";
+            user.recovery_sent_at = new Date(Date.now() - 5000).toISOString();
+          }
+          if (body.purpose === "signup") user.email_confirmed_at = new Date().toISOString();
+          const session = issue(user, body.purpose === "password" ? "password" : "otp");
+          emailAccessTokens.add(session.access_token);
+          const token_hash = `synthetic-email-${randomUUID()}`;
+          emailHashes.set(token_hash, { purpose: String(body.purpose), session });
+          send(res, 200, { ...session, token_hash });
           return;
         }
         if (url.pathname === "/__fixture/state" && req.method === "GET") {
@@ -794,7 +823,8 @@ export async function startFixtureServer() {
           ).find(
             (key) =>
               FIXTURE_CREDENTIALS[key].email === body.email &&
-              FIXTURE_CREDENTIALS[key].password === body.password,
+              (changedPasswords.get(FIXTURE_CREDENTIALS[key].email) ??
+                FIXTURE_CREDENTIALS[key].password) === body.password,
           );
           if (!kind) throw new HttpError(400, "Invalid login credentials", "invalid_credentials");
           calls.signIn++;
@@ -821,15 +851,39 @@ export async function startFixtureServer() {
         }
         unsupported("Only password and refresh_token grants are implemented.");
       }
+      if (url.pathname === "/auth/v1/verify" && req.method === "POST") {
+        const body = await jsonBody(req);
+        const entry = emailHashes.get(String(body.token_hash));
+        if (
+          !entry ||
+          entry.purpose !== body.type ||
+          !["signup", "recovery"].includes(String(body.type))
+        )
+          throw new HttpError(403, "Invalid or expired synthetic email link.", "otp_expired");
+        if (body.type === "recovery" && !entry.session.user.email_confirmed_at)
+          entry.session.user.email_confirmed_at = new Date().toISOString();
+        emailHashes.delete(String(body.token_hash));
+        send(res, 200, entry.session);
+        return;
+      }
       if (url.pathname === "/auth/v1/user" && req.method === "GET") {
         const session = authenticate(req);
         calls.getUser++;
         send(res, 200, session.user);
         return;
       }
+      if (url.pathname === "/auth/v1/user" && req.method === "PUT") {
+        const session = authenticate(req);
+        const body = await jsonBody(req);
+        if (typeof body.password !== "string" || body.password.length < 8)
+          throw new HttpError(400, "Invalid synthetic password.");
+        changedPasswords.set(session.user.email, body.password);
+        send(res, 200, session.user);
+        return;
+      }
       if (url.pathname === "/auth/v1/logout" && req.method === "POST") {
         const session = authenticate(req);
-        sessions.delete(session.access_token);
+        if (!emailAccessTokens.has(session.access_token)) sessions.delete(session.access_token);
         refreshTokens.delete(session.refresh_token);
         send(res, 204);
         return;

@@ -4,6 +4,15 @@ import { getSupabaseConfig } from "@/lib/env";
 import { authCookiesSecure } from "@/lib/auth-cookie-options";
 
 export async function proxy(request: NextRequest) {
+  // Public email shells never read/refresh an unrelated application identity.
+  if (
+    ["/auth/callback", "/reset-password", "/auth/email-code"].includes(request.nextUrl.pathname)
+  ) {
+    const response = NextResponse.next({ request });
+    response.headers.set("Cache-Control", "private, no-store");
+    response.headers.set("Referrer-Policy", "no-referrer");
+    return response;
+  }
   const config = getSupabaseConfig();
   if (!config) return NextResponse.next({ request });
   let response = NextResponse.next({ request });
