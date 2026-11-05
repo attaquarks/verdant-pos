@@ -2,6 +2,8 @@
 
 Status: **in progress**. This document is a public handoff, not a claim that R2 photos are implemented or deployed. Verify the latest source, provider configuration and owner instructions before making changes. Never put credentials, private object URLs or undisclosed security details in this public repository.
 
+Latest checkpoint: the selected bucket passed an authenticated access check. That check did not prove the bucket is private or empty. Local database and storage prototypes have passed isolated tests, but the upload, download and replacement flow is not integrated or deployed. Provider behavior, permissions, cleanup and real end-to-end testing remain open. The current Supabase project now contains real shop data; never use it as disposable test data.
+
 ## Current situation
 
 Verdant is a non-AI, multi-shop point-of-sale app. A fresh Supabase project has been selected after the prior organization became unavailable; the owner did not request data recovery. The live website was reconnected to the new project and core migrations 0001–0003 were applied. Confirm the actual current state through authorized access; migration history may use provider-generated version identifiers with original filenames recorded as names.
